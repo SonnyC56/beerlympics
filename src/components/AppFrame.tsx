@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useIdentity } from "@/lib/identity";
+import { usePush } from "@/lib/push";
 import {
   Avatar,
   Sheet,
@@ -38,8 +39,8 @@ function Shell({ children }: { children: ReactNode }) {
   const identity = useIdentity();
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // The big-screen scoreboard is chromeless (a public TV display — no sign-in).
-  const chromeless = pathname === "/scoreboard/tv";
+  // The big-screen scoreboard + photo reel are chromeless public TV displays.
+  const chromeless = pathname.startsWith("/scoreboard/tv");
   if (chromeless) return <>{children}</>;
 
   // Auth gate: everyone signs in with Google / Apple before entering.
@@ -185,6 +186,7 @@ function SignInScreen() {
 function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
   const identity = useIdentity();
   const run = useAction();
+  const push = usePush();
   const [name, setName] = useState("");
   const [emoji, setEmoji] = useState("🍺");
   const [hostCode, setHostCode] = useState("");
@@ -287,6 +289,36 @@ function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void })
             </div>
           )}
         </div>
+
+        {push.supported && (
+          <div className="hairline flex items-center justify-between gap-3 pt-4">
+            <div>
+              <div className="font-bold text-white">🔔 &ldquo;You&rsquo;re up&rdquo; alerts</div>
+              <div className="text-xs text-white/45">
+                {push.permission === "denied"
+                  ? "Blocked — enable notifications in your browser settings."
+                  : "Get buzzed when your team is seated at a station."}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => (push.subscribed ? push.disable() : push.enable())}
+              disabled={push.busy || push.permission === "denied"}
+              aria-pressed={push.subscribed}
+              className={cx(
+                "relative h-7 w-12 shrink-0 rounded-full transition disabled:opacity-40",
+                push.subscribed ? "bg-[var(--color-gold-500)]" : "bg-white/15",
+              )}
+            >
+              <span
+                className={cx(
+                  "absolute top-1 h-5 w-5 rounded-full bg-white transition",
+                  push.subscribed ? "left-6" : "left-1",
+                )}
+              />
+            </button>
+          </div>
+        )}
 
         <div className="hairline flex items-center justify-between pt-4">
           <div className="min-w-0 truncate text-xs text-white/40">

@@ -21,6 +21,8 @@ import type * as lib from "../lib.js";
 import type * as matches from "../matches.js";
 import type * as media from "../media.js";
 import type * as phases from "../phases.js";
+import type * as push from "../push.js";
+import type * as pushSender from "../pushSender.js";
 import type * as rsvp from "../rsvp.js";
 import type * as scoring from "../scoring.js";
 import type * as seed from "../seed.js";
@@ -51,6 +53,8 @@ declare const fullApi: ApiFromModules<{
   matches: typeof matches;
   media: typeof media;
   phases: typeof phases;
+  push: typeof push;
+  pushSender: typeof pushSender;
   rsvp: typeof rsvp;
   scoring: typeof scoring;
   seed: typeof seed;

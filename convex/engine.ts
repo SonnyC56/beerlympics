@@ -18,6 +18,7 @@
  */
 import type { MutationCtx } from "./_generated/server";
 import type { Doc, Id } from "./_generated/dataModel";
+import { internal } from "./_generated/api";
 import { awardPoints, placementToPoints, recordActivity } from "./lib";
 
 // Rising stakes: later phases are worth more, so no team is ever dead-in-the-water.
@@ -155,6 +156,10 @@ export async function runDispatch(
     await ctx.db.patch(station._id, {
       status: "busy",
       currentMatchId: match._id,
+    });
+    // Buzz the players: "you're up next" push (no-op if push isn't configured).
+    await ctx.scheduler.runAfter(0, internal.pushSender.sendToMatch, {
+      matchId: match._id,
     });
     for (const t of match.teamIds) busy.add(t);
     // Remove from the pool so it isn't seated twice in this pass.

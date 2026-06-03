@@ -83,13 +83,22 @@ export default function ScoreboardPage() {
               {finished ? "Champions" : "Leaderboard"}
             </h1>
           </div>
-          <Link
-            href="/scoreboard/tv"
-            className="btn btn-ghost shrink-0 px-3.5 py-2.5 text-sm"
-            title="Open the big-screen view"
-          >
-            📺 TV / Projector mode
-          </Link>
+          <div className="flex shrink-0 flex-col gap-1.5">
+            <Link
+              href="/scoreboard/tv"
+              className="btn btn-ghost px-3.5 py-2 text-sm"
+              title="Big-screen scoreboard"
+            >
+              📺 TV scoreboard
+            </Link>
+            <Link
+              href="/scoreboard/tv/reel"
+              className="btn btn-ghost px-3.5 py-2 text-sm"
+              title="Big-screen photo slideshow"
+            >
+              🎞️ Photo reel
+            </Link>
+          </div>
         </div>
 
         {/* Podium when finished */}
