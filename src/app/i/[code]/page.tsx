@@ -1,0 +1,161 @@
+"use client";
+
+import Link from "next/link";
+import { useEffect, useRef } from "react";
+import { useParams } from "next/navigation";
+import { useMutation, useQuery } from "convex/react";
+import { api } from "@convex/_generated/api";
+import { useIdentity } from "@/lib/identity";
+import { EmptyState, Spinner } from "@/components/primitives";
+import { formatEventDate } from "@/lib/format";
+import { RsvpForm } from "@/components/RsvpForm";
+
+export default function InvitePage() {
+  const { code } = useParams<{ code: string }>();
+  const identity = useIdentity();
+
+  const event = useQuery(api.events.get, {});
+  const invite = useQuery(api.invites.peek, code ? { code } : "skip");
+  const mine = useQuery(
+    api.rsvp.mine,
+    identity.deviceId ? { deviceId: identity.deviceId } : "skip",
+  );
+
+  // Record the click exactly once per mount (best-effort attribution).
+  const claim = useMutation(api.invites.claim);
+  const claimedRef = useRef(false);
+  useEffect(() => {
+    if (!code || claimedRef.current) return;
+    claimedRef.current = true;
+    void claim({ code }).catch(() => {
+      /* attribution is best-effort; never block the page */
+    });
+  }, [code, claim]);
+
+  if (event === undefined || invite === undefined) {
+    return <Spinner label="Opening your invite…" />;
+  }
+
+  if (event === null) {
+    return (
+      <div className="py-6">
+        <EmptyState
+          emoji="🗓️"
+          title="Nothing here yet"
+          subtitle="This invite link is valid, but the host hasn't set up the games yet. Check back soon!"
+          action={
+            <Link href="/" className="btn btn-gold">
+              Go home
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
+  const recipientName = invite?.recipientName?.trim() || undefined;
+  const hostNote = invite?.note?.trim() || undefined;
+
+  const existing =
+    mine === undefined
+      ? undefined
+      : mine?.player
+        ? {
+            status: mine.player.status,
+            plusOnes: mine.player.plusOnes,
+            note: mine.player.note,
+            emoji: mine.player.emoji,
+            name: mine.player.name,
+            team: mine.team
+              ? {
+                  emoji: mine.team.emoji,
+                  name: mine.team.name,
+                  color: mine.team.color,
+                }
+              : null,
+          }
+        : null;
+
+  return (
+    <div className="space-y-5">
+      {/* Personalized hero */}
+      <section className="panel stadium-grid relative overflow-hidden p-6 text-center">
+        <div className="pointer-events-none absolute -right-8 -top-10 text-[120px] opacity-10">
+          {event.coverEmoji}
+        </div>
+        <div className="relative">
+          <p className="font-display text-xl tracking-wide text-[var(--color-gold-300)]">
+            {recipientName ? (
+              <>Hey {recipientName} 👋</>
+            ) : (
+              <>Hey there 👋</>
+            )}
+          </p>
+          <p className="mt-1 text-sm uppercase tracking-[0.2em] text-white/45">
+            You&apos;re invited to
+          </p>
+
+          <div className="mt-3 text-5xl">{event.coverEmoji}</div>
+          <h1 className="mt-2 font-display text-4xl leading-none text-medal">
+            {event.name}
+          </h1>
+          {event.tagline && (
+            <p className="mt-2 text-sm text-white/60">{event.tagline}</p>
+          )}
+
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-white/70">
+            <span className="chip">📅 {formatEventDate(event.dateIso)}</span>
+            {event.startTime && <span className="chip">⏰ {event.startTime}</span>}
+            {event.location &&
+              (event.locationUrl ? (
+                <a
+                  href={event.locationUrl}
+                  className="chip hover:text-white"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  📍 {event.location}
+                </a>
+              ) : (
+                <span className="chip">📍 {event.location}</span>
+              ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Host's personal note */}
+      {hostNote && (
+        <blockquote className="panel-tight relative p-5">
+          <span className="absolute -top-2 left-4 font-display text-4xl text-[var(--color-gold-500)]/40">
+            &ldquo;
+          </span>
+          <p className="pl-4 text-sm italic text-white/80">{hostNote}</p>
+          <footer className="mt-2 pl-4 text-xs uppercase tracking-widest text-white/40">
+            — a note from your host
+          </footer>
+        </blockquote>
+      )}
+
+      {/* RSVP */}
+      {existing === undefined ? (
+        <div className="panel p-6">
+          <Spinner label="Checking your RSVP…" />
+        </div>
+      ) : (
+        <RsvpForm
+          recipientName={recipientName}
+          invitedViaCode={code}
+          existing={existing}
+          compact
+        />
+      )}
+
+      <p className="text-center text-xs text-white/35">
+        Already part of the crew?{" "}
+        <Link href="/" className="text-[var(--color-gold-400)] underline">
+          Open Beerlympics
+        </Link>
+      </p>
+    </div>
+  );
+}

@@ -1,0 +1,36 @@
+{
+  "name": "beerlympics",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Beerlympics — invite, RSVP, run the fluid tournament, live scoreboard, and capture the highlight reel.",
+  "scripts": {
+    "dev": "concurrently -n next,convex -c magenta,cyan \"next dev\" \"convex dev\"",
+    "dev:next": "next dev",
+    "dev:convex": "convex dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "seed": "convex run seed:run"
+  },
+  "dependencies": {
+    "@auth/core": "^0.37.0",
+    "@convex-dev/auth": "^0.0.93",
+    "convex": "^1.17.4",
+    "next": "^15.1.6",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@types/node": "^22.10.7",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.18.0",
+    "eslint-config-next": "^15.1.6",
+    "tailwindcss": "^4.0.0",
+    "typescript": "^5.7.3"
+  }
+}
