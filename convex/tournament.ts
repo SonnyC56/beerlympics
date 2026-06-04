@@ -275,6 +275,38 @@ async function orderTeams(
   return teams.map((t) => t._id);
 }
 
+/** Build a game's bracket for a phase using its format. Clears any prior instance first. */
+async function buildInstance(
+  ctx: MutationCtx,
+  event: Doc<"events">,
+  game: Doc<"games">,
+  phaseIndex: number,
+  ordered: Id<"teams">[],
+) {
+  await clearInstance(ctx, event, game._id, phaseIndex);
+  if (game.format === "single_elim") {
+    await buildSingleElim(ctx, event, game, phaseIndex, ordered);
+  } else if (game.format === "heats") {
+    await buildHeats(ctx, event, game, phaseIndex, ordered);
+  } else {
+    await buildRoundRobin(ctx, event, game, phaseIndex, ordered);
+  }
+  await ctx.db.patch(game._id, { status: "active" });
+}
+
+/** True if a game already has matches built for the given phase. */
+async function hasInstance(
+  ctx: MutationCtx,
+  gameId: Id<"games">,
+  phaseIndex: number,
+): Promise<boolean> {
+  const matches = await ctx.db
+    .query("matches")
+    .withIndex("by_game", (q) => q.eq("gameId", gameId))
+    .collect();
+  return matches.some((m) => m.phaseIndex === phaseIndex);
+}
+
 // ── Mutations ─────────────────────────────────────────────────────────────────
 
 /** Host: generate (or regenerate) a game's tournament for a phase. */
@@ -309,17 +341,7 @@ export const generate = mutation({
       throw new Error("Need at least 2 teams to build a tournament.");
     }
 
-    await clearInstance(ctx, event, game._id, phaseIndex);
-
-    if (game.format === "single_elim") {
-      await buildSingleElim(ctx, event, game, phaseIndex, ordered);
-    } else if (game.format === "heats") {
-      await buildHeats(ctx, event, game, phaseIndex, ordered);
-    } else {
-      await buildRoundRobin(ctx, event, game, phaseIndex, ordered);
-    }
-
-    await ctx.db.patch(game._id, { status: "active" });
+    await buildInstance(ctx, event, game, phaseIndex, ordered);
     await recordActivity(ctx, event._id, {
       kind: "announcement",
       message: `${game.name} bracket is set — ${ordered.length} teams in!`,
@@ -420,12 +442,38 @@ export const startPhase = mutation({
       }
     }
 
+    // Auto-build brackets for this phase: every enabled, bracketed, non-gated
+    // game that doesn't already have an instance for this phase gets generated.
+    // Seeding follows the round — by overall seed in the qualifier, by live
+    // standings in the knockouts/finals. Gated games (Beer Die) are skipped;
+    // they're seeded explicitly via seedFromStandings. Hosts can still
+    // Regenerate any game by hand afterward.
+    const seeding: "seed" | "standings" =
+      phase?.kind === "qualifier" ? "seed" : "standings";
+    const games = await ctx.db
+      .query("games")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    let autoBuilt = 0;
+    for (const g of games) {
+      if (g.enabled === false) continue;
+      if (g.format === "wheel" || g.format === "special") continue;
+      if (g.isGated) continue; // gated finales seed from standings on demand
+      if (await hasInstance(ctx, g._id, index)) continue; // don't clobber existing
+      const ordered = await orderTeams(ctx, event, seeding);
+      if (ordered.length < 2) continue; // not enough teams to bracket
+      await buildInstance(ctx, event, g, index, ordered);
+      autoBuilt++;
+    }
+
     await recordActivity(ctx, event._id, {
       kind: "phase",
-      message: `${phase?.name ?? `Phase ${index + 1}`} is underway!`,
+      message:
+        `${phase?.name ?? `Phase ${index + 1}`} is underway!` +
+        (autoBuilt > 0 ? ` ${autoBuilt} bracket${autoBuilt === 1 ? "" : "s"} built.` : ""),
     });
     const started = await runDispatch(ctx, event);
-    return { started };
+    return { started, autoBuilt };
   },
 });
 

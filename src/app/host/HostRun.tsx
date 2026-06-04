@@ -454,6 +454,12 @@ function GenerateBrackets({
   return (
     <section className="panel p-5">
       <HostSectionTitle icon="construction" title="Build Brackets" />
+      <p className="mb-3 text-xs text-white/45">
+        Brackets now build <span className="text-white/70">automatically</span> when you Start
+        a phase — by seed in the Group Circuit, by live standings in the knockouts. Use these
+        only to re-seed or rebuild a single game. Beer Die still seeds from the Seed&nbsp;finale
+        button below.
+      </p>
       {games === undefined ? (
         <Spinner />
       ) : games.length === 0 ? (
