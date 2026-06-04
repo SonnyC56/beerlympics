@@ -3,11 +3,17 @@
 import { useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
-import type { Id } from "@convex/_generated/dataModel";
+import type { Doc, Id } from "@convex/_generated/dataModel";
 import { useIdentity } from "@/lib/identity";
-import { Spinner, cx, useAction, useToast } from "@/components/primitives";
+import { Sheet, Spinner, cx, useAction, useToast } from "@/components/primitives";
 import { Icon } from "@/components/Icon";
 import { HostField, MiniButton } from "./HostKit";
+
+// Local helper: patch/replace an invite inside the cached list query so create/
+// edit/delete feel instant (Convex reconciles with the server result on return).
+function listKey(deviceId: string) {
+  return { deviceId };
+}
 
 /** Section header with a leading SVG icon (emoji-free). */
 function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
@@ -112,15 +118,38 @@ function HostCodeCard({ hostCode }: { hostCode: string | null | undefined }) {
 // ── Create invite ─────────────────────────────────────────────────────────────
 function CreateInvite() {
   const identity = useIdentity();
-  const run = useAction();
   const toast = useToast();
-  const create = useMutation(api.invites.create);
+  // Optimistic: drop a placeholder row into the list immediately so the new
+  // invite shows up the instant you tap, before the server round-trip.
+  const create = useMutation(api.invites.create).withOptimisticUpdate(
+    (store, args) => {
+      const cur = store.getQuery(api.invites.list, listKey(args.deviceId));
+      if (!cur) return;
+      const temp = {
+        _id: `temp_${Date.now()}` as Id<"invites">,
+        _creationTime: Date.now(),
+        eventId: cur[0]?.eventId ?? ("" as Id<"events">),
+        code: "······",
+        uses: 0,
+        createdAt: Date.now(),
+        label: args.label,
+        recipientName: args.recipientName,
+        recipientEmail: args.recipientEmail,
+        note: args.note,
+        maxUses: args.maxUses,
+        emailStatus:
+          args.sendEmail && args.recipientEmail ? ("queued" as const) : undefined,
+      } as Doc<"invites">;
+      store.setQuery(api.invites.list, listKey(args.deviceId), [temp, ...cur]);
+    },
+  );
 
   const [label, setLabel] = useState("");
   const [recipientName, setRecipientName] = useState("");
   const [recipientEmail, setRecipientEmail] = useState("");
   const [note, setNote] = useState("");
   const [sendEmail, setSendEmail] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   const reset = () => {
     setLabel("");
@@ -129,6 +158,32 @@ function CreateInvite() {
     setNote("");
     setSendEmail(false);
   };
+
+  async function submit() {
+    if (!identity.deviceId || busy) return;
+    setBusy(true);
+    try {
+      const res = await create({
+        deviceId: identity.deviceId,
+        label: label.trim() || undefined,
+        recipientName: recipientName.trim() || undefined,
+        recipientEmail: recipientEmail.trim() || undefined,
+        note: note.trim() || undefined,
+        sendEmail: sendEmail && !!recipientEmail.trim(),
+        appBaseUrl: origin(),
+      });
+      const link = (res as { link?: string })?.link;
+      if (link) {
+        await navigator.clipboard?.writeText(link).catch(() => {});
+        toast("Invite created — link copied!", "ok");
+      }
+      reset();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn't create invite", "err");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <section className="panel p-5">
@@ -214,28 +269,19 @@ function CreateInvite() {
 
         <button
           className="btn btn-gold inline-flex w-full items-center justify-center gap-1.5"
-          disabled={!identity.deviceId}
-          onClick={() =>
-            run(async () => {
-              const res = await create({
-                deviceId: identity.deviceId!,
-                label: label.trim() || undefined,
-                recipientName: recipientName.trim() || undefined,
-                recipientEmail: recipientEmail.trim() || undefined,
-                note: note.trim() || undefined,
-                sendEmail: sendEmail && !!recipientEmail.trim(),
-                appBaseUrl: origin(),
-              });
-              const link = (res as { link?: string })?.link;
-              if (link) {
-                await navigator.clipboard?.writeText(link).catch(() => {});
-                toast("Invite created — link copied!", "ok");
-              }
-              reset();
-            })
-          }
+          disabled={!identity.deviceId || busy}
+          onClick={submit}
         >
-          <Icon name="link" size={16} /> Create invite link
+          {busy ? (
+            <>
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black/70" />
+              Creating…
+            </>
+          ) : (
+            <>
+              <Icon name="link" size={16} /> Create invite link
+            </>
+          )}
         </button>
       </div>
     </section>
@@ -248,8 +294,22 @@ function InviteRow({ invite }: { invite: Invite }) {
   const run = useAction();
   const toast = useToast();
   const resend = useMutation(api.invites.resend);
-  const remove = useMutation(api.invites.remove);
+  // Optimistic: remove the row from the cached list immediately on delete.
+  const remove = useMutation(api.invites.remove).withOptimisticUpdate(
+    (store, args) => {
+      const cur = store.getQuery(api.invites.list, listKey(args.deviceId));
+      if (!cur) return;
+      store.setQuery(
+        api.invites.list,
+        listKey(args.deviceId),
+        cur.filter((i) => i._id !== args.inviteId),
+      );
+    },
+  );
   const [confirmDel, setConfirmDel] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const isTemp = (invite._id as string).startsWith("temp_");
 
   const link = `${origin()}/i/${invite.code}`;
   const emailStatus = invite.emailStatus;
@@ -308,6 +368,7 @@ function InviteRow({ invite }: { invite: Invite }) {
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <MiniButton
           tone="gold"
+          disabled={isTemp}
           onClick={() => {
             navigator.clipboard?.writeText(link);
             toast("Link copied — paste it in a text!", "ok");
@@ -317,9 +378,14 @@ function InviteRow({ invite }: { invite: Invite }) {
             <Icon name="clipboard" size={14} /> Copy link
           </span>
         </MiniButton>
+        <MiniButton disabled={!identity.deviceId || isTemp} onClick={() => setEditOpen(true)}>
+          <span className="inline-flex items-center gap-1.5">
+            <Icon name="pencil" size={14} /> Edit
+          </span>
+        </MiniButton>
         {invite.recipientEmail && (
           <MiniButton
-            disabled={!identity.deviceId}
+            disabled={!identity.deviceId || isTemp}
             onClick={() =>
               run(
                 () =>
@@ -342,29 +408,171 @@ function InviteRow({ invite }: { invite: Invite }) {
             <div className="flex items-center gap-1.5">
               <MiniButton
                 tone="flame"
-                disabled={!identity.deviceId}
-                onClick={() =>
-                  run(
+                disabled={!identity.deviceId || deleting}
+                onClick={async () => {
+                  if (!identity.deviceId) return;
+                  setDeleting(true);
+                  // Optimistic update removes the row instantly; close the confirm.
+                  setConfirmDel(false);
+                  const ok = await run(
                     () =>
                       remove({
                         deviceId: identity.deviceId!,
                         inviteId: invite._id,
                       }),
                     "Invite deleted",
-                  )
-                }
+                  );
+                  if (!ok) setDeleting(false);
+                }}
               >
-                Confirm
+                {deleting ? "Deleting…" : "Confirm"}
               </MiniButton>
               <MiniButton onClick={() => setConfirmDel(false)}>Cancel</MiniButton>
             </div>
           ) : (
-            <MiniButton tone="flame" onClick={() => setConfirmDel(true)}>
+            <MiniButton tone="flame" disabled={isTemp} onClick={() => setConfirmDel(true)}>
               Delete
             </MiniButton>
           )}
         </div>
       </div>
+
+      {editOpen && (
+        <EditInvite invite={invite} onClose={() => setEditOpen(false)} />
+      )}
     </div>
+  );
+}
+
+// ── Edit invite ─────────────────────────────────────────────────────────────────
+function EditInvite({ invite, onClose }: { invite: Invite; onClose: () => void }) {
+  const identity = useIdentity();
+  const toast = useToast();
+  const update = useMutation(api.invites.update).withOptimisticUpdate(
+    (store, args) => {
+      const cur = store.getQuery(api.invites.list, listKey(args.deviceId));
+      if (!cur) return;
+      store.setQuery(
+        api.invites.list,
+        listKey(args.deviceId),
+        cur.map((i) =>
+          i._id === args.inviteId
+            ? {
+                ...i,
+                label: args.label || undefined,
+                recipientName: args.recipientName || undefined,
+                recipientEmail: args.recipientEmail || undefined,
+                note: args.note || undefined,
+                maxUses: args.maxUses && args.maxUses > 0 ? args.maxUses : undefined,
+              }
+            : i,
+        ),
+      );
+    },
+  );
+
+  const [label, setLabel] = useState(invite.label ?? "");
+  const [recipientName, setRecipientName] = useState(invite.recipientName ?? "");
+  const [recipientEmail, setRecipientEmail] = useState(invite.recipientEmail ?? "");
+  const [note, setNote] = useState(invite.note ?? "");
+  const [maxUses, setMaxUses] = useState(invite.maxUses ? String(invite.maxUses) : "");
+  const [busy, setBusy] = useState(false);
+
+  async function save() {
+    if (!identity.deviceId || busy) return;
+    setBusy(true);
+    try {
+      await update({
+        deviceId: identity.deviceId,
+        inviteId: invite._id,
+        label: label.trim(),
+        recipientName: recipientName.trim(),
+        recipientEmail: recipientEmail.trim(),
+        note: note.trim(),
+        maxUses: maxUses.trim() ? Number(maxUses) : undefined,
+      });
+      toast("Invite updated", "ok");
+      onClose();
+    } catch (e) {
+      toast(e instanceof Error ? e.message : "Couldn't update invite", "err");
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Sheet open onClose={onClose} title={`Edit invite ${invite.code}`}>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <HostField label="Label" hint="for you">
+            <input
+              className="field"
+              placeholder="The Smiths"
+              value={label}
+              maxLength={40}
+              onChange={(e) => setLabel(e.target.value)}
+            />
+          </HostField>
+          <HostField label="Recipient">
+            <input
+              className="field"
+              placeholder="Alex"
+              value={recipientName}
+              maxLength={40}
+              onChange={(e) => setRecipientName(e.target.value)}
+            />
+          </HostField>
+        </div>
+        <HostField label="Email" hint="for resending via Resend">
+          <input
+            type="email"
+            className="field"
+            placeholder="alex@example.com"
+            value={recipientEmail}
+            onChange={(e) => setRecipientEmail(e.target.value)}
+          />
+        </HostField>
+        <HostField label="Personal note" hint="optional">
+          <textarea
+            className="field min-h-16 resize-none"
+            placeholder="Can't wait to see you there!"
+            value={note}
+            maxLength={240}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </HostField>
+        <HostField label="Max uses" hint="blank = unlimited">
+          <input
+            className="field w-32"
+            inputMode="numeric"
+            placeholder="Unlimited"
+            value={maxUses}
+            onChange={(e) => setMaxUses(e.target.value.replace(/[^0-9]/g, ""))}
+          />
+        </HostField>
+        <p className="text-[11px] text-white/40">
+          Tip: leave a field blank to clear it. The code stays the same, so any link
+          you&apos;ve already shared keeps working.
+        </p>
+        <div className="flex gap-2 pt-1">
+          <button className="btn btn-ghost flex-1" onClick={onClose} disabled={busy}>
+            Cancel
+          </button>
+          <button
+            className="btn btn-gold flex-1 inline-flex items-center justify-center gap-1.5"
+            onClick={save}
+            disabled={!identity.deviceId || busy}
+          >
+            {busy ? (
+              <>
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-black/20 border-t-black/70" />
+                Saving…
+              </>
+            ) : (
+              "Save changes"
+            )}
+          </button>
+        </div>
+      </div>
+    </Sheet>
   );
 }

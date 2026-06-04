@@ -119,6 +119,41 @@ export const create = mutation({
   },
 });
 
+/**
+ * Host: edit an existing invite's details. Passing an empty string clears that
+ * field; omitting a field leaves it unchanged is NOT supported here — the editor
+ * always sends the full set, so a blank value means "clear it".
+ */
+export const update = mutation({
+  args: {
+    deviceId: v.string(),
+    inviteId: v.id("invites"),
+    label: v.optional(v.string()),
+    recipientName: v.optional(v.string()),
+    recipientEmail: v.optional(v.string()),
+    note: v.optional(v.string()),
+    maxUses: v.optional(v.number()),
+  },
+  handler: async (ctx, { deviceId, inviteId, label, recipientName, recipientEmail, note, maxUses }) => {
+    await assertHost(ctx, deviceId);
+    const invite = await ctx.db.get(inviteId);
+    if (!invite) throw new Error("Invite not found.");
+    const clean = (s?: string) => {
+      const t = s?.trim();
+      return t ? t : undefined;
+    };
+    // Patching a field to `undefined` removes it from the doc.
+    await ctx.db.patch(inviteId, {
+      label: clean(label),
+      recipientName: clean(recipientName),
+      recipientEmail: clean(recipientEmail),
+      note: clean(note),
+      maxUses: maxUses && maxUses > 0 ? maxUses : undefined,
+    });
+    return true;
+  },
+});
+
 /** Host: re-send an invite email. */
 export const resend = mutation({
   args: { deviceId: v.string(), inviteId: v.id("invites"), appBaseUrl: v.string() },
