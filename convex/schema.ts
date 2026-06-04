@@ -75,6 +75,9 @@ export default defineSchema({
       // Points for winning a single match (encourages effort even when out of placement).
       winBonus: v.number(),
       allowSelfClaim: v.boolean(), // can players enter their own results, or host-only
+      // Max players per team, counting the captain (optional; defaults in code so
+      // existing events without it stay valid). e.g. 3 = pair + an optional sub.
+      maxTeamSize: v.optional(v.number()),
     }),
     createdAt: v.number(),
   }).index("by_slug", ["slug"]),

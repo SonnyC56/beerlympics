@@ -66,6 +66,7 @@ export default function TeamDetailPage() {
     | null
     | undefined;
   const standings = useQuery(api.scoring.standings, {});
+  const event = useQuery(api.events.get, {});
   const ledger = useQuery(api.scoring.teamLedger, { teamId: tid }) as
     | LedgerEntry[]
     | undefined;
@@ -101,6 +102,7 @@ export default function TeamDetailPage() {
   }
 
   const hex = colorHex(team.color);
+  const cap = event?.settings?.maxTeamSize ?? 3;
   const myUserId = identity.userId;
   const amCaptain = !!myUserId && team.captainUserId === myUserId;
   const amMember = !!myUserId && team.members.some((m) => m.userId === myUserId);
@@ -174,7 +176,7 @@ export default function TeamDetailPage() {
             )}
             <span className="chip flex items-center gap-1.5">
               <Icon name="teams" size={14} />
-              {team.members.length}{" "}
+              {team.members.length}/{cap}{" "}
               {team.members.length === 1 ? "player" : "players"}
             </span>
           </div>
@@ -251,6 +253,9 @@ export default function TeamDetailPage() {
         <h2 className="mb-3 flex items-center gap-2 font-display text-xl">
           <Icon name="teams" size={20} />
           Roster
+          <span className="text-sm font-normal text-white/40">
+            {team.members.length}/{cap}
+          </span>
         </h2>
         {team.members.length === 0 ? (
           <p className="text-sm text-white/45">

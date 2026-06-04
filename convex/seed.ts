@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
   defaultPlacementPoints: [100, 70, 50, 35, 25, 15, 10, 5],
   winBonus: 5,
   allowSelfClaim: true,
+  maxTeamSize: 3, // pair + optional sub
 };
 
 // Games removed from the lineup — `seed:resync` deletes these (and their
@@ -171,6 +172,7 @@ export const resync = mutation({
         drinking: cm.drinking ?? cm.beer ?? 1,
         lawn: cm.lawn ?? cm.long ?? 1.5,
       },
+      maxTeamSize: event.settings.maxTeamSize ?? 3,
     };
     await ctx.db.patch(event._id, eventPatch);
 

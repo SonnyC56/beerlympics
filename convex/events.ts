@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
   defaultPlacementPoints: [100, 70, 50, 35, 25, 15, 10, 5],
   winBonus: 5,
   allowSelfClaim: true,
+  maxTeamSize: 3, // pair + optional sub
 };
 
 /** The active event (or null before setup). */
@@ -142,13 +143,19 @@ export const updateSettings = mutation({
       defaultPlacementPoints: v.array(v.number()),
       winBonus: v.number(),
       allowSelfClaim: v.boolean(),
+      maxTeamSize: v.optional(v.number()),
     }),
   },
   handler: async (ctx, { deviceId, settings }) => {
     await assertHost(ctx, deviceId);
     const event = await getActiveEvent(ctx);
     if (!event) throw new Error("No event.");
-    await ctx.db.patch(event._id, { settings });
+    // Clamp the cap to >= 1 so a team can always seat its captain.
+    const clean =
+      settings.maxTeamSize != null
+        ? { ...settings, maxTeamSize: Math.max(1, Math.floor(settings.maxTeamSize)) }
+        : settings;
+    await ctx.db.patch(event._id, { settings: clean });
     return true;
   },
 });

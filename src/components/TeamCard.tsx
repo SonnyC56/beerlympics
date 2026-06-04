@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { Id } from "@convex/_generated/dataModel";
-import { Avatar } from "@/components/primitives";
+import { Avatar, cx } from "@/components/primitives";
 import { Icon, Mascot } from "@/components/Icon";
 import { colorHex } from "@/lib/teamColors";
 
@@ -35,14 +35,17 @@ export function TeamCard({
   highlight = false,
   pinnedLabel,
   action,
+  cap,
 }: {
   team: TeamCardTeam;
   highlight?: boolean;
   pinnedLabel?: string;
   action?: React.ReactNode;
+  cap?: number;
 }) {
   const hex = colorHex(team.color);
   const memberCount = team.members.length;
+  const isFull = typeof cap === "number" && memberCount >= cap;
   const captain = team.members.find((m) => m.role === "captain");
 
   return (
@@ -131,9 +134,17 @@ export function TeamCard({
           <div className="text-right">
             <div className="font-display text-lg leading-none text-white">
               {memberCount}
+              {typeof cap === "number" && (
+                <span className="text-white/40">/{cap}</span>
+              )}
             </div>
-            <div className="text-[10px] uppercase tracking-widest text-white/40">
-              {memberCount === 1 ? "Player" : "Players"}
+            <div
+              className={cx(
+                "text-[10px] uppercase tracking-widest",
+                isFull ? "text-[var(--color-gold-300)]" : "text-white/40",
+              )}
+            >
+              {isFull ? "Full" : memberCount === 1 ? "Player" : "Players"}
             </div>
           </div>
         </div>

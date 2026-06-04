@@ -20,6 +20,7 @@ import { COLOR_TOKENS, colorHex } from "@/lib/teamColors";
 export default function TeamsPage() {
   const identity = useIdentity();
   const teams = useQuery(api.teams.list, {}) as TeamCardTeam[] | undefined;
+  const event = useQuery(api.events.get, {});
   const mine = useQuery(
     api.rsvp.mine,
     identity.deviceId ? { deviceId: identity.deviceId } : "skip",
@@ -33,6 +34,9 @@ export default function TeamsPage() {
   const [editTeam, setEditTeam] = useState<TeamCardTeam | null>(null);
 
   if (teams === undefined) return <Spinner label="Loading the squads…" />;
+
+  // Max players per team (counts the captain); host-set, defaults to 3.
+  const cap = event?.settings?.maxTeamSize ?? 3;
 
   // `mine` is undefined while loading, null if no RSVP/event.
   const hasRsvp = !!mine?.player;
@@ -99,6 +103,7 @@ export default function TeamsPage() {
           <TeamCard
             team={myTeam}
             highlight
+            cap={cap}
             pinnedLabel="Your team"
             action={
               <>
@@ -175,6 +180,7 @@ export default function TeamsPage() {
               <TeamCard
                 key={team._id}
                 team={team}
+                cap={cap}
                 action={
                   // Only show Join when the user has RSVP'd and has no team.
                   hasRsvp && !myTeam ? (
@@ -190,10 +196,16 @@ export default function TeamsPage() {
                           `Joined ${team.name}!`,
                         )
                       }
-                      disabled={!identity.deviceId}
+                      disabled={!identity.deviceId || team.members.length >= cap}
                     >
-                      <Icon name="plus" size={14} />
-                      Join this team
+                      {team.members.length >= cap ? (
+                        <>Team full ({team.members.length}/{cap})</>
+                      ) : (
+                        <>
+                          <Icon name="plus" size={14} />
+                          Join this team
+                        </>
+                      )}
                     </button>
                   ) : !hasRsvp ? (
                     <Link

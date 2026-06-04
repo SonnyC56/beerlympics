@@ -1,6 +1,7 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import {
+  DEFAULT_MAX_TEAM_SIZE,
   assertHost,
   getActiveEvent,
   getUserByDevice,
@@ -130,6 +131,22 @@ export const join = mutation({
       )
       .unique();
     if (!player) throw new Error("RSVP before joining a team.");
+
+    // Already on this team — nothing to do (and don't miscount the cap).
+    if (player.teamId === teamId) return true;
+
+    // Enforce the team-size cap on the TARGET team. This runs inside the
+    // mutation transaction, so two racing joins can't both slip past it —
+    // Convex retries the loser against the updated count. (Joining also moves
+    // the player off any current team; that frees a slot automatically.)
+    const cap = event.settings.maxTeamSize ?? DEFAULT_MAX_TEAM_SIZE;
+    const current = await membersOf(ctx, teamId);
+    if (current.length >= cap) {
+      throw new Error(
+        `${team.name} is full (max ${cap} players). Ask the host to raise the cap, or join another team.`,
+      );
+    }
+
     await ctx.db.patch(player._id, { teamId, role: "member" });
     await recordActivity(ctx, event._id, {
       kind: "team",

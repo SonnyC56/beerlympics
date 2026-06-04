@@ -37,6 +37,7 @@ type EventDoc = {
     defaultPlacementPoints: number[];
     winBonus: number;
     allowSelfClaim: boolean;
+    maxTeamSize?: number;
   };
 };
 
@@ -201,6 +202,7 @@ function ScoringSettings({ event }: { event: EventDoc }) {
     s.defaultPlacementPoints.join(", "),
   );
   const [winBonus, setWinBonus] = useState(String(s.winBonus));
+  const [maxTeamSize, setMaxTeamSize] = useState(String(s.maxTeamSize ?? 3));
   const [allowSelfClaim, setAllowSelfClaim] = useState(s.allowSelfClaim);
 
   useEffect(() => {
@@ -208,6 +210,7 @@ function ScoringSettings({ event }: { event: EventDoc }) {
     setLawn(String(cm.lawn ?? cm.long ?? 1.5));
     setPlacement(s.defaultPlacementPoints.join(", "));
     setWinBonus(String(s.winBonus));
+    setMaxTeamSize(String(s.maxTeamSize ?? 3));
     setAllowSelfClaim(s.allowSelfClaim);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [s]);
@@ -273,6 +276,16 @@ function ScoringSettings({ event }: { event: EventDoc }) {
           />
         </HostField>
 
+        <HostField label="Max team size" hint="counts the captain — e.g. 3 = pair + a sub">
+          <input
+            type="number"
+            min={1}
+            className="field w-28 text-center"
+            value={maxTeamSize}
+            onChange={(e) => setMaxTeamSize(e.target.value)}
+          />
+        </HostField>
+
         <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3">
           <div>
             <div className="flex items-center gap-1.5 font-bold text-white">
@@ -316,6 +329,7 @@ function ScoringSettings({ event }: { event: EventDoc }) {
                     defaultPlacementPoints: parsedPlacement,
                     winBonus: Math.max(0, Number(winBonus) || 0),
                     allowSelfClaim,
+                    maxTeamSize: Math.max(1, Number(maxTeamSize) || 3),
                   },
                 }),
               "Scoring rules saved",

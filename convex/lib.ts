@@ -18,6 +18,13 @@ export function genCode(length = 6): string {
   return out;
 }
 
+// ── Teams ───────────────────────────────────────────────────────────────────
+/**
+ * Default cap on players per team (counts the captain). 3 = "teams of two with
+ * an optional 3rd sub". Hosts override via event.settings.maxTeamSize.
+ */
+export const DEFAULT_MAX_TEAM_SIZE = 3;
+
 // ── Event ─────────────────────────────────────────────────────────────────────
 /** Returns the single active event, or null if none exists yet. */
 export async function getActiveEvent(
