@@ -128,7 +128,7 @@ function Stat({ icon, label, value }: { icon: IconName; label: string; value: nu
   );
 }
 
-// A two-step (click → confirm) host action. `mutation` is an `api.admin.*` ref
+// A two-step (click then confirm) host action. `mutation` is an `api.admin.*` ref
 // that takes `{ deviceId }`.
 function DangerAction({
   icon,
