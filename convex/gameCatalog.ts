@@ -115,26 +115,6 @@ export const GAME_CATALOG: CatalogGame[] = [
     ],
   },
   {
-    key: "snappa",
-    name: "Snappa",
-    emoji: "🎯",
-    category: "drinking",
-    format: "single_elim",
-    teamsPerMatch: 2,
-    pointsMultiplier: 1.1,
-    estMinutes: 12,
-    art: "snappa",
-    stations: 1,
-    blurb: "Bounce a die down the table — sink it or make them catch it.",
-    rules: [
-      "2v2 across a long table, a cup in front of each player.",
-      "Throw a die so it bounces off the table toward the opponents' end.",
-      "Opponents must catch it after exactly one bounce.",
-      "Score on sinks (die in a cup), 'dias' (off the far end), and clean table hits they don't catch.",
-      "Drink on drops and missed catches. Play to a set score, win by 2.",
-    ],
-  },
-  {
     key: "boatrace",
     name: "Boat Race",
     emoji: "🚣",
@@ -155,25 +135,6 @@ export const GAME_CATALOG: CatalogGame[] = [
   },
 
   // ── DRINKING GAMES — circle & chaos ─────────────────────────────────────────
-  {
-    key: "quarters",
-    name: "Quarters",
-    emoji: "🪙",
-    category: "drinking",
-    format: "heats",
-    teamsPerMatch: 4,
-    pointsMultiplier: 0.8,
-    estMinutes: 8,
-    art: "quarters",
-    stations: 1,
-    blurb: "Bounce a quarter into the cup. Three in a row makes a rule.",
-    rules: [
-      "Players take turns bouncing a quarter off the table into a central cup.",
-      "Make it → assign a drink and go again. Miss → pass to the next player.",
-      "Three makes in a row → invent a rule everyone must follow.",
-      "Heats of up to 4 teams; rank by total makes in a timed round.",
-    ],
-  },
   {
     key: "civilwar",
     name: "Civil War",
