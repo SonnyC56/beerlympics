@@ -24,27 +24,33 @@ export type CatalogGame = {
   wheelSpots?: WheelSpot[]; // only for format "wheel"
 };
 
-export type WheelSpot = { label: string; points?: number; color?: string };
+export type WheelSpot = {
+  label: string;
+  points?: number;
+  color?: string;
+  // When true, landing here fires an "everybody drinks" push to everyone.
+  broadcast?: boolean;
+};
 
 /** Default 18 spots for The Wheel — a mix of point bonuses, penalties, and dares. */
 export const DEFAULT_WHEEL_SPOTS: WheelSpot[] = [
   { label: "+100", points: 100 },
-  { label: "Waterfall" },
+  { label: "Waterfall", broadcast: true },
   { label: "+25", points: 25 },
-  { label: "Shotgun a Beer" },
+  { label: "Shotgun a Beer", broadcast: true },
   { label: "+50", points: 50 },
-  { label: "Everyone Drinks" },
+  { label: "Everyone Drinks", broadcast: true },
   { label: "Dealer's Choice" },
   { label: "+75", points: 75 },
   { label: "Lose 25", points: -25 },
   { label: "Truth or Dare" },
   { label: "Double Up" },
   { label: "+50", points: 50 },
-  { label: "Captain Chugs" },
+  { label: "Captain Chugs", broadcast: true },
   { label: "Wildcard" },
   { label: "+25", points: 25 },
   { label: "Spin Again" },
-  { label: "Power Hour" },
+  { label: "Power Hour", broadcast: true },
   { label: "+10", points: 10 },
 ];
 

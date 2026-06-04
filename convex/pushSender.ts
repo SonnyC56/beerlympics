@@ -38,3 +38,40 @@ export const sendToMatch = internalAction({
     );
   },
 });
+
+/**
+ * Broadcast a notification to EVERYONE subscribed — used for the wheel's
+ * "everybody drinks" moments (whether spun digitally or on the physical wheel).
+ */
+export const sendBroadcast = internalAction({
+  args: {
+    title: v.string(),
+    body: v.string(),
+    url: v.optional(v.string()),
+  },
+  handler: async (ctx, { title, body, url }) => {
+    const pub = process.env.VAPID_PUBLIC_KEY;
+    const priv = process.env.VAPID_PRIVATE_KEY;
+    const subject = process.env.VAPID_SUBJECT || "mailto:host@beerlympics.app";
+    if (!pub || !priv) return; // push not configured — no-op
+
+    webpush.setVapidDetails(subject, pub, priv);
+
+    const subs = await ctx.runQuery(internal.push.allSubscriptions, {});
+    await Promise.all(
+      subs.map(async (s) => {
+        try {
+          await webpush.sendNotification(
+            { endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
+            JSON.stringify({ title, body, url: url ?? "/games" }),
+          );
+        } catch (e) {
+          const code = (e as { statusCode?: number }).statusCode;
+          if (code === 404 || code === 410) {
+            await ctx.runMutation(internal.push.remove, { id: s.id });
+          }
+        }
+      }),
+    );
+  },
+});

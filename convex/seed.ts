@@ -1,7 +1,7 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getActiveEvent } from "./lib";
-import { GAME_CATALOG } from "./gameCatalog";
+import { GAME_CATALOG, DEFAULT_WHEEL_SPOTS } from "./gameCatalog";
 import type { Id } from "./_generated/dataModel";
 
 const DEFAULT_SETTINGS = {
@@ -277,13 +277,35 @@ export const resync = mutation({
       }
     }
 
+    // 4) Backfill "everybody drinks" broadcast flags onto wheels that still use
+    //    the stock spots (host-customized wheels are left untouched). Idempotent:
+    //    once a wheel has any broadcast spot, it's skipped.
+    let wheelsMigrated = 0;
+    const wheelGames = (
+      await ctx.db
+        .query("games")
+        .withIndex("by_event", (q) => q.eq("eventId", event._id))
+        .collect()
+    ).filter((g) => g.format === "wheel");
+    const defaultLabels = DEFAULT_WHEEL_SPOTS.map((s) => s.label).join("|");
+    for (const wg of wheelGames) {
+      const cur = wg.wheelSpots ?? [];
+      const untouched = cur.map((s) => s.label).join("|") === defaultLabels;
+      const noneBroadcast = cur.every((s) => !s.broadcast);
+      if (untouched && noneBroadcast) {
+        await ctx.db.patch(wg._id, { wheelSpots: DEFAULT_WHEEL_SPOTS });
+        wheelsMigrated++;
+      }
+    }
+
     return {
       ok: true,
       updated,
       added,
       removed,
       stationsAdded,
-      message: `Resynced ${updated} games, added ${added} new (+${stationsAdded} stations), removed ${removed}.`,
+      wheelsMigrated,
+      message: `Resynced ${updated} games, added ${added} new (+${stationsAdded} stations), removed ${removed}, migrated ${wheelsMigrated} wheel(s).`,
     };
   },
 });

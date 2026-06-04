@@ -1,5 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import {
   assertHost,
   awardPoints,
@@ -12,9 +13,12 @@ const spotValidator = v.object({
   label: v.string(),
   points: v.optional(v.number()),
   color: v.optional(v.string()),
+  broadcast: v.optional(v.boolean()),
 });
 
-function spotsOf(game: { wheelSpots?: { label: string; points?: number; color?: string }[] }) {
+function spotsOf(game: {
+  wheelSpots?: { label: string; points?: number; color?: string; broadcast?: boolean }[];
+}) {
   return game.wheelSpots && game.wheelSpots.length > 0
     ? game.wheelSpots
     : DEFAULT_WHEEL_SPOTS;
@@ -105,7 +109,48 @@ export const recordSpin = mutation({
       teamId,
     });
 
-    return { label: spot.label, points };
+    // Group-action spots (Everyone Drinks, Waterfall, …) buzz everybody.
+    if (spot.broadcast) {
+      await ctx.scheduler.runAfter(0, internal.pushSender.sendBroadcast, {
+        title: "DRINK!",
+        body: `${team.name} spun "${spot.label}" — everybody drink!`,
+        url: `/games/${gameId}`,
+      });
+    }
+
+    return { label: spot.label, points, broadcast: spot.broadcast ?? false };
+  },
+});
+
+/**
+ * Host: fire an "everybody drinks" push to everyone right now — for when the
+ * physical wheel lands on a group action (or just to rally a drink). Logs it to
+ * the activity feed too.
+ */
+export const broadcastDrink = mutation({
+  args: {
+    deviceId: v.string(),
+    gameId: v.optional(v.id("games")),
+    label: v.optional(v.string()),
+  },
+  handler: async (ctx, { deviceId, gameId, label }) => {
+    await assertHost(ctx, deviceId);
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const what = (label ?? "Everybody drinks").trim() || "Everybody drinks";
+
+    await ctx.scheduler.runAfter(0, internal.pushSender.sendBroadcast, {
+      title: "DRINK!",
+      body: `${what} — bottoms up!`,
+      url: gameId ? `/games/${gameId}` : "/games",
+    });
+
+    await recordActivity(ctx, event._id, {
+      kind: "announcement",
+      message: `The wheel says: ${what}. Everybody drink!`,
+    });
+
+    return { ok: true };
   },
 });
 

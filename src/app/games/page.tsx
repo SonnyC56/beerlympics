@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -38,7 +37,6 @@ const CATEGORY_ORDER: string[] = ["drinking", "lawn"];
 
 export default function GamesLibraryPage() {
   const games = useQuery(api.games.list, {}) as Game[] | undefined;
-  const [open, setOpen] = useState<string | null>(null);
 
   if (games === undefined) return <Spinner label="Loading the game library…" />;
 
@@ -68,7 +66,7 @@ export default function GamesLibraryPage() {
           Games &amp; Rules
         </h1>
         <p className="mt-1.5 text-sm text-white/55">
-          Every game in this year&apos;s lineup, with the rules. Tap a game to read how it&apos;s played.
+          Every game in this year&apos;s lineup. Tap any game to open its rules, bracket, and standings.
         </p>
       </header>
 
@@ -91,12 +89,7 @@ export default function GamesLibraryPage() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               {inCat.map((g) => (
-                <GameLibraryCard
-                  key={g._id}
-                  game={g}
-                  open={open === g._id}
-                  onToggle={() => setOpen((cur) => (cur === g._id ? null : g._id))}
-                />
+                <GameLibraryCard key={g._id} game={g} />
               ))}
             </div>
           </section>
@@ -116,12 +109,7 @@ export default function GamesLibraryPage() {
             {enabled
               .filter((g) => g.format === "wheel" || g.format === "special")
               .map((g) => (
-                <GameLibraryCard
-                  key={g._id}
-                  game={g}
-                  open={open === g._id}
-                  onToggle={() => setOpen((cur) => (cur === g._id ? null : g._id))}
-                />
+                <GameLibraryCard key={g._id} game={g} />
               ))}
           </div>
         </section>
@@ -130,77 +118,40 @@ export default function GamesLibraryPage() {
   );
 }
 
-function GameLibraryCard({
-  game,
-  open,
-  onToggle,
-}: {
-  game: Game;
-  open: boolean;
-  onToggle: () => void;
-}) {
-  const rules = (game.rules ?? "").split("\n").map((r) => r.trim()).filter(Boolean);
-  return (
-    <div className="panel overflow-hidden">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={open}
-        className="flex w-full items-center gap-3 p-4 text-left transition hover:bg-white/[0.03]"
-      >
-        <span className="shrink-0 rounded-2xl bg-black/30 p-1.5 ring-1 ring-white/8">
-          <GameArt artKey={game.art} size={56} title={game.name} />
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-2">
-            <span className="font-display text-xl leading-none text-white">
-              {game.name}
-            </span>
-            {game.isGated && (
-              <span className="chip inline-flex items-center gap-1 border-[var(--color-flame)]/40 text-[var(--color-flame-soft)]">
-                <Icon name="lock" size={12} /> Finale
-              </span>
-            )}
-          </span>
-          {game.description && (
-            <span className="mt-1 block text-xs text-white/55">{game.description}</span>
-          )}
-          <span className="mt-1.5 block text-[11px] uppercase tracking-wide text-white/35">
-            {FORMAT_LABEL[game.format] ?? game.format}
-            {game.teamsPerMatch > 2 ? ` · heats of ${game.teamsPerMatch}` : ""}
-          </span>
-        </span>
-        <Icon
-          name="chevronDown"
-          size={16}
-          className={cx("shrink-0 text-white/30 transition-transform", open && "rotate-180")}
-        />
-      </button>
+const OPEN_CTA: Record<string, string> = {
+  wheel: "Spin the wheel",
+  special: "Open event",
+};
 
-      {open && (
-        <div className="border-t border-white/8 bg-black/25 px-4 py-4 animate-rise">
-          {rules.length > 0 ? (
-            <ol className="space-y-2">
-              {rules.map((r, i) => (
-                <li key={i} className="flex gap-2.5 text-sm text-white/80">
-                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-gold-500)]/15 text-[11px] font-bold text-[var(--color-gold-300)]">
-                    {i + 1}
-                  </span>
-                  <span>{r}</span>
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="text-sm text-white/40">No rules written yet.</p>
+function GameLibraryCard({ game }: { game: Game }) {
+  return (
+    <Link
+      href={`/games/${game._id}`}
+      className="panel flex items-center gap-3 p-4 transition hover:bg-white/[0.03]"
+    >
+      <span className="shrink-0 rounded-2xl bg-black/30 p-1.5 ring-1 ring-white/8">
+        <GameArt artKey={game.art} size={56} title={game.name} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="font-display text-xl leading-none text-white">{game.name}</span>
+          {game.isGated && (
+            <span className="chip inline-flex items-center gap-1 border-[var(--color-flame)]/40 text-[var(--color-flame-soft)]">
+              <Icon name="lock" size={12} /> Finale
+            </span>
           )}
-          <Link
-            href={`/games/${game._id}`}
-            className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-[var(--color-gold-400)] hover:text-[var(--color-gold-300)]"
-          >
-            View bracket &amp; standings <Icon name="arrowRight" size={14} />
-          </Link>
-        </div>
-      )}
-    </div>
+        </span>
+        {game.description && (
+          <span className="mt-1 block text-xs text-white/55">{game.description}</span>
+        )}
+        <span className="mt-1.5 block text-[11px] uppercase tracking-wide text-white/35">
+          {FORMAT_LABEL[game.format] ?? game.format}
+          {game.teamsPerMatch > 2 ? ` · heats of ${game.teamsPerMatch}` : ""}
+        </span>
+      </span>
+      <span className="flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--color-gold-400)]">
+        {OPEN_CTA[game.format] ?? "Open"} <Icon name="arrowRight" size={14} />
+      </span>
+    </Link>
   );
 }

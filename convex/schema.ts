@@ -195,6 +195,8 @@ export default defineSchema({
           label: v.string(),
           points: v.optional(v.number()),
           color: v.optional(v.string()),
+          // Landing here buzzes everyone to drink (web push broadcast).
+          broadcast: v.optional(v.boolean()),
         }),
       ),
     ),

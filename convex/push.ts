@@ -121,6 +121,20 @@ export const payloadsForMatch = internalQuery({
   },
 });
 
+/** Internal: every push subscription on record (for broadcast alerts). */
+export const allSubscriptions = internalQuery({
+  args: {},
+  handler: async (ctx) => {
+    const subs = await ctx.db.query("pushSubscriptions").collect();
+    return subs.map((s) => ({
+      id: s._id,
+      endpoint: s.endpoint,
+      p256dh: s.p256dh,
+      auth: s.auth,
+    }));
+  },
+});
+
 /** Internal: drop a dead subscription (410/404 from the push service). */
 export const remove = internalMutation({
   args: { id: v.id("pushSubscriptions") },
