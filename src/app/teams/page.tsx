@@ -7,25 +7,40 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useIdentity } from "@/lib/identity";
 import {
+  Avatar,
   EmptyState,
   Sheet,
   Spinner,
+  cx,
   useAction,
 } from "@/components/primitives";
 import { TeamCard, type TeamCardTeam } from "@/components/TeamCard";
 import { ColorPicker, EmojiPicker } from "@/components/EmojiColorPicker";
-import { Icon, Mascot } from "@/components/Icon";
+import { Icon, Mascot, type IconName } from "@/components/Icon";
 import { COLOR_TOKENS, colorHex } from "@/lib/teamColors";
+
+type Guest = {
+  _id: Id<"players">;
+  name: string;
+  emoji: string;
+  status: "yes" | "no" | "maybe";
+  plusOnes: number;
+  note?: string;
+  teamId?: Id<"teams">;
+};
 
 export default function TeamsPage() {
   const identity = useIdentity();
   const teams = useQuery(api.teams.list, {}) as TeamCardTeam[] | undefined;
   const event = useQuery(api.events.get, {});
+  const guests = useQuery(api.rsvp.guests, {}) as Guest[] | undefined;
   const mine = useQuery(
     api.rsvp.mine,
     identity.deviceId ? { deviceId: identity.deviceId } : "skip",
   );
   const run = useAction();
+
+  const [view, setView] = useState<"teams" | "people">("teams");
 
   const leave = useMutation(api.teams.leave);
   const join = useMutation(api.teams.join);
@@ -70,6 +85,29 @@ export default function TeamsPage() {
         <Icon name="flag" size={36} className="text-medal" />
       </div>
 
+      {/* Teams / People toggle */}
+      <div className="flex gap-1 rounded-full border border-white/10 bg-black/30 p-1">
+        {(
+          [
+            { key: "teams", label: "Teams", icon: "flag" },
+            { key: "people", label: "People", icon: "teams" },
+          ] as const
+        ).map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setView(t.key)}
+            className={cx(
+              "flex flex-1 items-center justify-center gap-1.5 rounded-full py-2 text-sm font-bold transition",
+              view === t.key
+                ? "bg-[var(--color-gold-500)] text-[#1a1205]"
+                : "text-white/55 hover:text-white",
+            )}
+          >
+            <Icon name={t.icon} size={15} /> {t.label}
+          </button>
+        ))}
+      </div>
+
       {/* Create / RSVP CTA */}
       {hasRsvp ? (
         !myTeam ? (
@@ -96,6 +134,8 @@ export default function TeamsPage() {
         </div>
       )}
 
+      {view === "teams" && (
+        <>
       {/* Your team — pinned */}
       {myTeam && (
         <section className="space-y-2">
@@ -228,6 +268,11 @@ export default function TeamsPage() {
           Leave your team to switch to another squad.
         </p>
       )}
+        </>
+      )}
+
+      {/* People view */}
+      {view === "people" && <PeopleView guests={guests} teams={teams} />}
 
       <TeamFormSheet
         open={createOpen}
@@ -407,6 +452,154 @@ function FormField({
         {label}
       </label>
       {children}
+    </div>
+  );
+}
+
+// ── People view (the full guest roster, grouped by RSVP) ──────────────────────
+function PeopleView({
+  guests,
+  teams,
+}: {
+  guests: Guest[] | undefined;
+  teams: TeamCardTeam[];
+}) {
+  if (guests === undefined) return <Spinner label="Loading the guest list…" />;
+  if (guests.length === 0) {
+    return (
+      <div className="panel">
+        <EmptyState
+          icon="teams"
+          title="No RSVPs yet"
+          subtitle="Once people RSVP, the whole crew shows up here."
+        />
+      </div>
+    );
+  }
+
+  const teamById = new Map(teams.map((t) => [t._id as string, t]));
+  const roleByPlayer = new Map<string, "captain" | "member">();
+  for (const t of teams)
+    for (const m of t.members) roleByPlayer.set(m._id as string, m.role);
+
+  const going = guests.filter((g) => g.status === "yes");
+  const headcount = going.reduce((n, g) => n + 1 + (g.plusOnes ?? 0), 0);
+  const needTeam = going.filter((g) => !g.teamId).length;
+
+  const GROUPS: { key: Guest["status"]; label: string; icon: IconName }[] = [
+    { key: "yes", label: "Going", icon: "check" },
+    { key: "maybe", label: "Maybe", icon: "thinking" },
+    { key: "no", label: "Can't make it", icon: "close" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-3 gap-3">
+        <SummaryStat label="Going" value={going.length} />
+        <SummaryStat label="Heads" value={headcount} />
+        <SummaryStat
+          label="Need a team"
+          value={needTeam}
+          tone={needTeam > 0 ? "gold" : undefined}
+        />
+      </div>
+
+      {GROUPS.map((grp) => {
+        const list = guests.filter((g) => g.status === grp.key);
+        if (list.length === 0) return null;
+        return (
+          <section key={grp.key} className="space-y-2">
+            <div className="flex items-center gap-2 px-1">
+              <Icon
+                name={grp.icon}
+                size={16}
+                className={
+                  grp.key === "yes"
+                    ? "text-[var(--color-win)]"
+                    : grp.key === "no"
+                      ? "text-white/35"
+                      : "text-white/55"
+                }
+              />
+              <h2 className="font-display text-lg text-white/80">{grp.label}</h2>
+              <span className="chip">{list.length}</span>
+            </div>
+            <div className="space-y-2">
+              {list.map((g) => {
+                const team = g.teamId ? teamById.get(g.teamId as string) : undefined;
+                const isCaptain = roleByPlayer.get(g._id as string) === "captain";
+                return (
+                  <div
+                    key={g._id}
+                    className="panel-tight flex items-center gap-3 p-3"
+                  >
+                    <Avatar emoji={g.emoji} size={36} color={team?.color} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate font-semibold text-white">
+                          {g.name}
+                        </span>
+                        {isCaptain && (
+                          <Icon
+                            name="crown"
+                            size={13}
+                            className="shrink-0 text-[var(--color-gold-300)]"
+                          />
+                        )}
+                        {g.plusOnes > 0 && (
+                          <span className="chip shrink-0">+{g.plusOnes}</span>
+                        )}
+                      </div>
+                      <div className="mt-0.5 truncate text-xs">
+                        {team ? (
+                          <Link
+                            href={`/teams/${team._id}`}
+                            className="inline-flex items-center gap-1 text-white/55 hover:text-white"
+                          >
+                            <Mascot name={team.emoji} size={13} /> {team.name}
+                          </Link>
+                        ) : g.status === "yes" ? (
+                          <span className="text-[var(--color-gold-400)]">
+                            Looking for a team
+                          </span>
+                        ) : (
+                          <span className="text-white/35">No team</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function SummaryStat({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone?: "gold";
+}) {
+  return (
+    <div className="panel-tight flex flex-col items-center py-3">
+      <div
+        className={cx(
+          "font-display text-2xl",
+          tone === "gold" ? "text-[var(--color-gold-400)]" : "text-white",
+        )}
+      >
+        {value}
+      </div>
+      <div className="text-[10px] uppercase tracking-widest text-white/40">
+        {label}
+      </div>
     </div>
   );
 }
