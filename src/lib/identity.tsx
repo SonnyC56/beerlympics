@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef } from "react";
 import { useConvexAuth, useMutation, useQuery } from "convex/react";
 import { useAuthActions } from "@convex-dev/auth/react";
 import { api } from "@convex/_generated/api";
@@ -54,10 +54,20 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
   // (server-ignored) deviceId arg, so we pass the user id for traceability.
   const deviceId = isAuthenticated ? user?._id ?? "self" : null;
 
-  // Touch the user once signed in to set defaults (emoji) + lastSeen.
+  // Touch the user ONCE per signed-in session to set defaults (emoji) +
+  // lastSeen. Keyed on the user id (not the whole user doc) and guarded by a
+  // ref, so a `lastSeenAt` write can't re-trigger this effect — that loop was
+  // hammering the backend non-stop. Reset on sign-out so a re-login re-touches.
+  const ensuredFor = useRef<string | null>(null);
   useEffect(() => {
-    if (isAuthenticated && user) void ensure({ deviceId: "self" });
-  }, [isAuthenticated, user, ensure]);
+    if (!isAuthenticated) {
+      ensuredFor.current = null;
+      return;
+    }
+    if (!user?._id || ensuredFor.current === user._id) return;
+    ensuredFor.current = user._id;
+    void ensure({ deviceId: "self" });
+  }, [isAuthenticated, user?._id, ensure]);
 
   const value = useMemo<IdentityValue>(() => {
     const ready = !isLoading && (!isAuthenticated || user !== undefined);

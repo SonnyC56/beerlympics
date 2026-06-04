@@ -25,12 +25,25 @@ export const ensure = mutation({
   handler: async (ctx, { name, emoji }) => {
     const user = await getUserByDevice(ctx);
     if (!user) throw new Error("Sign in first.");
-    await ctx.db.patch(user._id, {
-      lastSeenAt: Date.now(),
-      ...(name && name.trim() ? { name: name.trim() } : {}),
-      ...(emoji ? { emoji } : {}),
-      ...(!user.emoji && !emoji ? { emoji: DEFAULT_EMOJI } : {}),
-    });
+
+    // Only write when something actually changes. Critically, `lastSeenAt` is
+    // throttled: rewriting it on every call re-fires the user's reactive
+    // subscriptions, which (combined with a client effect keyed on the user
+    // doc) created a mutation+query feedback loop that burned through quota and
+    // caused OCC conflicts. No change → no write → no re-fire → no loop.
+    const patch: Record<string, unknown> = {};
+    if (name && name.trim()) patch.name = name.trim();
+    if (emoji) patch.emoji = emoji;
+    if (!user.emoji && !patch.emoji) patch.emoji = DEFAULT_EMOJI;
+
+    const now = Date.now();
+    if (!user.lastSeenAt || now - user.lastSeenAt > 5 * 60 * 1000) {
+      patch.lastSeenAt = now;
+    }
+
+    if (Object.keys(patch).length > 0) {
+      await ctx.db.patch(user._id, patch);
+    }
     return user._id;
   },
 });
