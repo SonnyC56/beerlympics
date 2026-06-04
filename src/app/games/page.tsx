@@ -7,7 +7,8 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { EmptyState, Spinner, cx } from "@/components/primitives";
 import { GameArt } from "@/components/gameArt";
-import { categoryEmoji, categoryLabel } from "@/lib/format";
+import { Icon } from "@/components/Icon";
+import { categoryIcon, categoryLabel } from "@/lib/format";
 
 type Game = {
   _id: Id<"games">;
@@ -45,7 +46,7 @@ export default function GamesLibraryPage() {
   if (enabled.length === 0) {
     return (
       <EmptyState
-        emoji="🎮"
+        icon="games"
         title="No games yet"
         subtitle="The host hasn't set the lineup. Check back soon."
         action={
@@ -60,8 +61,8 @@ export default function GamesLibraryPage() {
   return (
     <div className="space-y-6">
       <header className="animate-rise">
-        <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-[var(--color-gold-400)]">
-          🎮 The Library
+        <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--color-gold-400)]">
+          <Icon name="games" size={14} /> The Library
         </div>
         <h1 className="mt-1 font-display text-4xl leading-none text-medal">
           Games &amp; Rules
@@ -82,7 +83,7 @@ export default function GamesLibraryPage() {
         return (
           <section key={cat} className="space-y-3">
             <div className="flex items-center gap-2">
-              <span className="text-lg">{categoryEmoji(cat)}</span>
+              <Icon name={categoryIcon(cat)} size={18} />
               <h2 className="font-display text-xl text-white/90">
                 {categoryLabel(cat)}s
               </h2>
@@ -105,7 +106,7 @@ export default function GamesLibraryPage() {
       {enabled.some((g) => g.format === "wheel" || g.format === "special") && (
         <section className="space-y-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">🎡</span>
+            <Icon name="wheel" size={18} />
             <h2 className="font-display text-xl text-white/90">Specials &amp; All-Day</h2>
             <span className="chip">
               {enabled.filter((g) => g.format === "wheel" || g.format === "special").length}
@@ -153,11 +154,11 @@ function GameLibraryCard({
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-2">
             <span className="font-display text-xl leading-none text-white">
-              {game.emoji} {game.name}
+              {game.name}
             </span>
             {game.isGated && (
-              <span className="chip border-[var(--color-flame)]/40 text-[var(--color-flame-soft)]">
-                🔒 Finale
+              <span className="chip inline-flex items-center gap-1 border-[var(--color-flame)]/40 text-[var(--color-flame-soft)]">
+                <Icon name="lock" size={12} /> Finale
               </span>
             )}
           </span>
@@ -169,7 +170,11 @@ function GameLibraryCard({
             {game.teamsPerMatch > 2 ? ` · heats of ${game.teamsPerMatch}` : ""}
           </span>
         </span>
-        <span className={cx("shrink-0 text-white/30 transition-transform", open && "rotate-180")}>▾</span>
+        <Icon
+          name="chevronDown"
+          size={16}
+          className={cx("shrink-0 text-white/30 transition-transform", open && "rotate-180")}
+        />
       </button>
 
       {open && (
@@ -192,7 +197,7 @@ function GameLibraryCard({
             href={`/games/${game._id}`}
             className="mt-4 inline-flex items-center gap-1 text-sm font-bold text-[var(--color-gold-400)] hover:text-[var(--color-gold-300)]"
           >
-            View bracket &amp; standings →
+            View bracket &amp; standings <Icon name="arrowRight" size={14} />
           </Link>
         </div>
       )}

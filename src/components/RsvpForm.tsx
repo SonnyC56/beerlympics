@@ -14,6 +14,7 @@ import {
   useAction,
 } from "@/components/primitives";
 import { EmojiPicker } from "@/components/EmojiColorPicker";
+import { Icon, Mascot } from "@/components/Icon";
 
 type RsvpStatus = "yes" | "no" | "maybe";
 
@@ -27,9 +28,30 @@ type ExistingRsvp = {
 } | null;
 
 const STATUS_OPTIONS: { value: RsvpStatus; label: React.ReactNode }[] = [
-  { value: "yes", label: "Yes 🍺" },
-  { value: "maybe", label: "Maybe 🤔" },
-  { value: "no", label: "Can't 😢" },
+  {
+    value: "yes",
+    label: (
+      <span className="inline-flex items-center justify-center gap-1.5">
+        Yes <Icon name="beer" size={14} />
+      </span>
+    ),
+  },
+  {
+    value: "maybe",
+    label: (
+      <span className="inline-flex items-center justify-center gap-1.5">
+        Maybe <Icon name="thinking" size={14} />
+      </span>
+    ),
+  },
+  {
+    value: "no",
+    label: (
+      <span className="inline-flex items-center justify-center gap-1.5">
+        Can&apos;t <Icon name="sad" size={14} />
+      </span>
+    ),
+  },
 ];
 
 export function RsvpForm({
@@ -52,7 +74,7 @@ export function RsvpForm({
   const run = useAction();
 
   const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState("🍺");
+  const [emoji, setEmoji] = useState("beer");
   const [status, setStatus] = useState<RsvpStatus>("yes");
   const [plusOnes, setPlusOnes] = useState(0);
   const [email, setEmail] = useState("");
@@ -72,7 +94,7 @@ export function RsvpForm({
         ? identity.user.name
         : "";
     setName(existing?.name || recipientName || identityName || "");
-    setEmoji(existing?.emoji || identity.user?.emoji || "🍺");
+    setEmoji(existing?.emoji || identity.user?.emoji || "beer");
     if (existing) {
       setStatus(existing.status);
       setPlusOnes(existing.plusOnes ?? 0);
@@ -101,10 +123,10 @@ export function RsvpForm({
           invitedViaCode,
         }),
       status === "yes"
-        ? "You're in! See you there 🍻"
+        ? "You're in! See you there"
         : status === "maybe"
-          ? "Marked as a maybe 🤔"
-          : "RSVP saved — we'll miss you 😢",
+          ? "Marked as a maybe"
+          : "RSVP saved — we'll miss you",
     );
     setSaving(false);
     if (ok) setConfirmed(status);
@@ -114,8 +136,11 @@ export function RsvpForm({
   if (confirmed) {
     return (
       <div className="panel animate-pop space-y-4 p-6 text-center">
-        <div className="text-6xl animate-float">
-          {confirmed === "yes" ? "🎉" : confirmed === "maybe" ? "🤞" : "💛"}
+        <div className="animate-float text-medal">
+          <Icon
+            name={confirmed === "yes" ? "party" : confirmed === "maybe" ? "thinking" : "heart"}
+            size={60}
+          />
         </div>
         <h2 className="font-display text-3xl text-medal">
           {confirmed === "yes"
@@ -132,14 +157,15 @@ export function RsvpForm({
               : "No worries — we'll save you a cold one. Change your mind? Just RSVP again."}
         </p>
         {email.trim() && confirmed === "yes" && (
-          <p className="text-xs text-[var(--color-gold-300)]">
-            📧 Confirmation on the way to {email.trim()}
+          <p className="inline-flex items-center justify-center gap-1.5 text-xs text-[var(--color-gold-300)]">
+            <Icon name="envelope" size={13} /> Confirmation on the way to {email.trim()}
           </p>
         )}
         <div className="flex flex-col gap-2 pt-1">
           {confirmed === "yes" && (
-            <Link href="/teams" className="btn btn-gold w-full py-3.5 text-base">
-              🚩 Now pick your team →
+            <Link href="/teams" className="btn btn-gold flex w-full items-center justify-center gap-2 py-3.5 text-base">
+              <Icon name="flag" size={16} /> Now pick your team
+              <Icon name="arrowRight" size={16} />
             </Link>
           )}
           <button
@@ -161,12 +187,22 @@ export function RsvpForm({
           {alreadyResponded ? "Update your RSVP" : "Are you in?"}
         </h2>
         {alreadyResponded && (
-          <span className="chip text-[var(--color-gold-300)]">
+          <span className="chip inline-flex items-center gap-1.5 text-[var(--color-gold-300)]">
+            <Icon
+              name={
+                existing!.status === "yes"
+                  ? "check"
+                  : existing!.status === "maybe"
+                    ? "thinking"
+                    : "sad"
+              }
+              size={13}
+            />
             {existing!.status === "yes"
-              ? "✅ Going"
+              ? "Going"
               : existing!.status === "maybe"
-                ? "🤔 Maybe"
-                : "😢 Out"}
+                ? "Maybe"
+                : "Out"}
           </span>
         )}
       </div>
@@ -193,15 +229,15 @@ export function RsvpForm({
             type="button"
             onClick={() => setShowEmoji((v) => !v)}
             className={cx(
-              "flex shrink-0 items-center justify-center rounded-[0.9rem] border px-3 text-2xl transition",
+              "flex shrink-0 items-center justify-center rounded-[0.9rem] border px-3 transition",
               showEmoji
-                ? "border-[var(--color-gold-500)] bg-[var(--color-gold-500)]/15"
-                : "border-white/10 bg-black/40 hover:bg-white/8",
+                ? "border-[var(--color-gold-500)] bg-[var(--color-gold-500)]/15 text-[var(--color-gold-300)]"
+                : "border-white/10 bg-black/40 text-white/85 hover:bg-white/8",
             )}
-            aria-label="Choose your emoji"
-            title="Choose your emoji"
+            aria-label="Choose your mascot"
+            title="Choose your mascot"
           >
-            {emoji}
+            <Mascot name={emoji} size={24} />
           </button>
           <input
             className="field"
@@ -285,19 +321,27 @@ export function RsvpForm({
         disabled={!canSubmit}
         onClick={submit}
       >
-        {saving
-          ? "Saving…"
-          : !identity.deviceId
-            ? "Loading…"
-            : !trimmedName
-              ? "Add your name first"
-              : alreadyResponded
-                ? "Update RSVP"
-                : status === "yes"
-                  ? "Count me in 🍺"
-                  : status === "maybe"
-                    ? "Pencil me in 🤔"
-                    : "I can't make it 😢"}
+        {saving ? (
+          "Saving…"
+        ) : !identity.deviceId ? (
+          "Loading…"
+        ) : !trimmedName ? (
+          "Add your name first"
+        ) : alreadyResponded ? (
+          "Update RSVP"
+        ) : status === "yes" ? (
+          <span className="inline-flex items-center justify-center gap-1.5">
+            Count me in <Icon name="beer" size={16} />
+          </span>
+        ) : status === "maybe" ? (
+          <span className="inline-flex items-center justify-center gap-1.5">
+            Pencil me in <Icon name="thinking" size={16} />
+          </span>
+        ) : (
+          <span className="inline-flex items-center justify-center gap-1.5">
+            I can&apos;t make it <Icon name="sad" size={16} />
+          </span>
+        )}
       </button>
     </div>
   );

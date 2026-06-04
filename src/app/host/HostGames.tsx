@@ -11,10 +11,33 @@ import {
   cx,
   useAction,
 } from "@/components/primitives";
+import type { ReactNode } from "react";
 import { EmojiPicker } from "@/components/EmojiColorPicker";
 import { GameArt } from "@/components/gameArt";
+import { Icon } from "@/components/Icon";
 import { categoryLabel } from "@/lib/format";
-import { HostField, HostSectionTitle, MiniButton, StatusDot } from "./HostKit";
+import { HostField, MiniButton, StatusDot } from "./HostKit";
+
+/** Section header with a leading SVG icon (emoji-free). */
+function SectionTitle({
+  icon,
+  title,
+  action,
+}: {
+  icon: ReactNode;
+  title: string;
+  action?: ReactNode;
+}) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-1.5 font-display text-xl text-white">
+        <span className="inline-flex shrink-0">{icon}</span>
+        {title}
+      </h2>
+      {action}
+    </div>
+  );
+}
 
 type Game = {
   _id: Id<"games">;
@@ -38,7 +61,7 @@ type Station = {
   name: string;
   status: "open" | "busy" | "closed";
   gameId: Id<"games">;
-  game: { _id: Id<"games">; name: string; emoji: string } | null;
+  game: { _id: Id<"games">; name: string; emoji: string; art?: string } | null;
 };
 
 const CATEGORIES = ["drinking", "lawn"] as const;
@@ -60,15 +83,15 @@ export function HostGames() {
     <div className="space-y-5">
       {/* ── Games ──────────────────────────────────────────────────────── */}
       <section className="panel p-5">
-        <HostSectionTitle
-          emoji="🎮"
+        <SectionTitle
+          icon={<Icon name="games" size={20} />}
           title="Games"
           action={
             <button
-              className="btn btn-gold px-4 py-2 text-sm"
+              className="btn btn-gold inline-flex items-center gap-1.5 px-4 py-2 text-sm"
               onClick={() => setCreating(true)}
             >
-              + New
+              <Icon name="plus" size={14} /> New
             </button>
           }
         />
@@ -106,13 +129,15 @@ export function HostGames() {
                       </span>
                       <div className="min-w-0">
                         <div className="truncate font-bold text-white">
-                          {g.emoji} {g.name}
+                          {g.name}
                         </div>
                         <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px] text-white/45">
                           <span className="chip">{categoryLabel(g.category)}</span>
                           <span>{g.format.replace("_", " ")}</span>
                           {g.isGated && (
-                            <span className="text-[var(--color-gold-300)]">🔒 gated</span>
+                            <span className="inline-flex items-center gap-1 text-[var(--color-gold-300)]">
+                              <Icon name="lock" size={12} /> gated
+                            </span>
                           )}
                         </div>
                       </div>
@@ -203,7 +228,7 @@ function StationsPanel({
 
   return (
     <section className="panel p-5">
-      <HostSectionTitle emoji="📍" title="Stations" />
+      <SectionTitle icon={<Icon name="pin" size={20} />} title="Stations" />
 
       {games && games.length > 0 ? (
         <div className="mb-4 space-y-2.5 rounded-2xl border border-white/8 bg-white/4 p-3.5">
@@ -224,7 +249,7 @@ function StationsPanel({
             >
               {games.map((g) => (
                 <option key={g._id} value={g._id}>
-                  {g.emoji} {g.name}
+                  {g.name}
                 </option>
               ))}
             </select>
@@ -264,7 +289,13 @@ function StationsPanel({
               className="flex items-center justify-between gap-2 rounded-2xl border border-white/8 bg-white/4 px-3.5 py-3"
             >
               <div className="flex min-w-0 items-center gap-2">
-                <span className="text-lg">{s.game?.emoji ?? "🎯"}</span>
+                <span className="text-lg text-white/80">
+                  {s.game ? (
+                    <GameArt artKey={s.game.art} size={20} title={s.game.name} />
+                  ) : (
+                    <Icon name="target" size={20} />
+                  )}
+                </span>
                 <div className="min-w-0">
                   <div className="truncate font-bold text-white">{s.name}</div>
                   <div className="truncate text-[11px] text-white/40">
@@ -306,7 +337,7 @@ function StationsPanel({
                         )
                       }
                     >
-                      ✕
+                      <Icon name="close" size={14} />
                     </MiniButton>
                   </>
                 )}
@@ -336,7 +367,7 @@ function GameSheet({
   const remove = useMutation(api.games.remove);
 
   const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState("🍺");
+  const [emoji, setEmoji] = useState("beer");
   const [category, setCategory] = useState<Game["category"]>("beer");
   const [format, setFormat] = useState<Game["format"]>("single_elim");
   const [description, setDescription] = useState("");
@@ -349,7 +380,7 @@ function GameSheet({
   useEffect(() => {
     if (!open) return;
     setName(game?.name ?? "");
-    setEmoji(game?.emoji ?? "🍺");
+    setEmoji(game?.emoji ?? "beer");
     setCategory(game?.category ?? "beer");
     setFormat(game?.format ?? "single_elim");
     setDescription(game?.description ?? "");
@@ -405,7 +436,7 @@ function GameSheet({
           />
         </HostField>
 
-        <HostField label={`Emoji ${emoji}`}>
+        <HostField label="Mascot">
           <EmojiPicker value={emoji} onChange={setEmoji} />
         </HostField>
 
@@ -502,7 +533,9 @@ function GameSheet({
         <div className="rounded-2xl border border-white/8 bg-white/4 p-3.5">
           <label className="flex items-center justify-between gap-3">
             <div>
-              <div className="font-bold text-white">🔒 Gated game</div>
+              <div className="flex items-center gap-1.5 font-bold text-white">
+                <Icon name="lock" size={16} /> Gated game
+              </div>
               <div className="text-xs text-white/45">
                 Stays locked until a later phase (e.g. the Beer Die finale).
               </div>

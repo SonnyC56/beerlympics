@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { TeamBadge, cx } from "@/components/primitives";
+import { Icon, Medal, Mascot } from "@/components/Icon";
+import { GameArt } from "@/components/gameArt";
 import { colorHex } from "@/lib/teamColors";
-import { placeMedal } from "@/lib/format";
 
 /** Shared shape used by both the scoreboard page and TV mode. */
 export type StandingTeam = {
@@ -16,7 +17,7 @@ export type StandingTeam = {
   total: number;
   rank: number;
   lastAt: number;
-  perGame: { gameId: string; name: string; emoji: string; points: number }[];
+  perGame: { gameId: string; name: string; emoji: string; art?: string; points: number }[];
 };
 
 /** Bar width as a % of the leader's total (min 4% so a row is always visible). */
@@ -43,7 +44,6 @@ function LeaderRow({
   onToggle: () => void;
 }) {
   const hex = colorHex(team.color);
-  const medal = placeMedal(team.rank);
   const pct = barPct(team.total, leader);
   const scored = team.perGame.filter((g) => g.points !== 0);
 
@@ -70,8 +70,8 @@ function LeaderRow({
         <div className="flex items-center gap-3 px-3.5 py-3">
           {/* Rank */}
           <div className="flex w-9 shrink-0 items-center justify-center">
-            {medal ? (
-              <span className="text-2xl leading-none">{medal}</span>
+            {team.rank <= 3 ? (
+              <Medal rank={team.rank} size={24} />
             ) : (
               <span className="font-display text-xl tabular-nums text-white/40">
                 {team.rank}
@@ -115,7 +115,7 @@ function LeaderRow({
             )}
             aria-hidden
           >
-            ▾
+            <Icon name="chevronDown" size={16} />
           </span>
         </div>
 
@@ -134,7 +134,7 @@ function LeaderRow({
                     key={g.gameId}
                     className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/4 px-2.5 py-1 text-sm"
                   >
-                    <span>{g.emoji}</span>
+                    <GameArt artKey={g.art} size={16} />
                     <span className="text-white/55">{g.name}</span>
                     <span className="font-display tabular-nums text-[var(--color-gold-300)]">
                       {g.points}
@@ -191,11 +191,12 @@ export function Podium({ teams }: { teams: StandingTeam[] }) {
             key={t._id}
             className="flex min-w-0 flex-1 flex-col items-center animate-rise"
           >
-            <div className={cx("text-3xl", champ && "animate-float")}>
-              {placeMedal(t.rank)}
+            <div className={cx("flex items-center justify-center", champ && "animate-float")}>
+              <Medal rank={t.rank} size={28} />
             </div>
-            <div className="mt-1 max-w-full truncate text-center text-sm font-bold">
-              {t.emoji} {t.name}
+            <div className="mt-1 flex max-w-full items-center justify-center gap-1.5 truncate text-center text-sm font-bold">
+              <Mascot name={t.emoji} size={16} />
+              <span className="truncate">{t.name}</span>
             </div>
             <div
               className="font-display text-2xl leading-none"

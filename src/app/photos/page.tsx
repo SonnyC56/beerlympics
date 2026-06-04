@@ -12,6 +12,7 @@ import {
   useNow,
 } from "@/components/primitives";
 import { timeAgo } from "@/lib/format";
+import { Icon, type IconName } from "@/components/Icon";
 import { MediaCapture } from "@/components/MediaCapture";
 import { MediaGrid, type MediaItem } from "@/components/MediaGrid";
 
@@ -55,13 +56,13 @@ export default function PhotosPage() {
       {/* Stats strip */}
       {stats && stats.total > 0 && (
         <section className="grid grid-cols-4 gap-2.5">
-          <StatPill label="Clips" value={stats.total} emoji="🎞️" />
-          <StatPill label="Photos" value={stats.photos} emoji="📸" />
-          <StatPill label="Videos" value={stats.videos} emoji="🎬" />
+          <StatPill label="Clips" value={stats.total} icon="film" />
+          <StatPill label="Photos" value={stats.photos} icon="camera" />
+          <StatPill label="Videos" value={stats.videos} icon="film" />
           <StatPill
             label="Reel"
             value={stats.favorites}
-            emoji="⭐"
+            icon="star"
             highlight
           />
         </section>
@@ -73,9 +74,30 @@ export default function PhotosPage() {
         onChange={setFilter}
         options={[
           { value: "all", label: "All" },
-          { value: "photo", label: "📸 Photos" },
-          { value: "video", label: "🎬 Videos" },
-          { value: "reel", label: "⭐ Reel" },
+          {
+            value: "photo",
+            label: (
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <Icon name="camera" size={14} /> Photos
+              </span>
+            ),
+          },
+          {
+            value: "video",
+            label: (
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <Icon name="film" size={14} /> Videos
+              </span>
+            ),
+          },
+          {
+            value: "reel",
+            label: (
+              <span className="inline-flex items-center justify-center gap-1.5">
+                <Icon name="star" size={14} /> Reel
+              </span>
+            ),
+          },
         ]}
       />
 
@@ -94,12 +116,12 @@ export default function PhotosPage() {
 function StatPill({
   label,
   value,
-  emoji,
+  icon,
   highlight,
 }: {
   label: string;
   value: number;
-  emoji: string;
+  icon: IconName;
   highlight?: boolean;
 }) {
   return (
@@ -109,7 +131,9 @@ function StatPill({
         highlight && "ring-1 ring-[var(--color-gold-500)]/40",
       )}
     >
-      <div className="text-base">{emoji}</div>
+      <div className={cx("text-base", highlight ? "text-[var(--color-gold-400)]" : "text-white/70")}>
+        <Icon name={icon} size={16} />
+      </div>
       <div
         className={cx(
           "font-display text-2xl",
@@ -125,7 +149,7 @@ function StatPill({
   );
 }
 
-// ── ⭐ Highlight reel filmstrip ────────────────────────────────────────────────
+// ── Highlight reel filmstrip ────────────────────────────────────────────────
 function ReelView({ items }: { items: MediaItem[] | undefined }) {
   const now = useNow(30000);
   if (items === undefined) return <Spinner label="Cueing the reel…" />;
@@ -133,9 +157,9 @@ function ReelView({ items }: { items: MediaItem[] | undefined }) {
   if (items.length === 0) {
     return (
       <EmptyState
-        emoji="⭐"
+        icon="star"
         title="No highlights yet"
-        subtitle="Tap the ☆ on any photo or clip to add it to the highlight reel."
+        subtitle="Tap the star on any photo or clip to add it to the highlight reel."
       />
     );
   }
@@ -143,7 +167,7 @@ function ReelView({ items }: { items: MediaItem[] | undefined }) {
   return (
     <div className="space-y-3">
       <div className="panel-tight flex items-start gap-3 p-4">
-        <span className="text-2xl">🎬</span>
+        <Icon name="film" size={24} className="shrink-0 text-white/70" />
         <p className="text-sm text-white/60">
           These {items.length} starred {items.length === 1 ? "pick" : "picks"} are
           queued — in capture order — for the host to stitch into the highlight
@@ -195,7 +219,7 @@ function ReelFrame({
           )
         ) : (
           <div className="flex h-full items-center justify-center text-white/30">
-            ⏳
+            <Icon name="clock" size={28} />
           </div>
         )}
       </div>

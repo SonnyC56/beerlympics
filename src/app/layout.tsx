@@ -18,7 +18,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Beerlympics",
+  title: "Sonny's Beer Olympics",
   description:
     "The annual backyard games. Get invited, draft your team, run the tournament, and watch the live scoreboard.",
   applicationName: "Beerlympics",
@@ -26,10 +26,10 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Beerlympics",
+    title: "Sonny's Beer Olympics",
   },
   openGraph: {
-    title: "Beerlympics",
+    title: "Sonny's Beer Olympics",
     description: "The annual backyard games. RSVP, build your team, compete.",
     type: "website",
   },

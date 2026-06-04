@@ -7,6 +7,7 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useIdentity } from "@/lib/identity";
 import { EmptyState, Spinner } from "@/components/primitives";
+import { Icon, Mascot } from "@/components/Icon";
 import { formatEventDate } from "@/lib/format";
 import { RsvpForm } from "@/components/RsvpForm";
 
@@ -40,7 +41,7 @@ export default function InvitePage() {
     return (
       <div className="py-6">
         <EmptyState
-          emoji="🗓️"
+          icon="calendar"
           title="Nothing here yet"
           subtitle="This invite link is valid, but the host hasn't set up the games yet. Check back soon!"
           action={
@@ -80,22 +81,21 @@ export default function InvitePage() {
     <div className="space-y-5">
       {/* Personalized hero */}
       <section className="panel stadium-grid relative overflow-hidden p-6 text-center">
-        <div className="pointer-events-none absolute -right-8 -top-10 text-[120px] opacity-10">
-          {event.coverEmoji}
+        <div className="pointer-events-none absolute -right-8 -top-10 opacity-10">
+          <Mascot name={event.coverEmoji} size={120} />
         </div>
         <div className="relative">
-          <p className="font-display text-xl tracking-wide text-[var(--color-gold-300)]">
-            {recipientName ? (
-              <>Hey {recipientName} 👋</>
-            ) : (
-              <>Hey there 👋</>
-            )}
+          <p className="inline-flex items-center justify-center gap-1.5 font-display text-xl tracking-wide text-[var(--color-gold-300)]">
+            {recipientName ? <>Hey {recipientName}</> : <>Hey there</>}
+            <Icon name="wave" size={18} />
           </p>
           <p className="mt-1 text-sm uppercase tracking-[0.2em] text-white/45">
             You&apos;re invited to
           </p>
 
-          <div className="mt-3 text-5xl">{event.coverEmoji}</div>
+          <div className="mt-3 flex justify-center text-medal">
+            <Mascot name={event.coverEmoji} size={48} />
+          </div>
           <h1 className="mt-2 font-display text-4xl leading-none text-medal">
             {event.name}
           </h1>
@@ -104,20 +104,28 @@ export default function InvitePage() {
           )}
 
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-white/70">
-            <span className="chip">📅 {formatEventDate(event.dateIso)}</span>
-            {event.startTime && <span className="chip">⏰ {event.startTime}</span>}
+            <span className="chip inline-flex items-center gap-1.5">
+              <Icon name="calendar" size={13} /> {formatEventDate(event.dateIso)}
+            </span>
+            {event.startTime && (
+              <span className="chip inline-flex items-center gap-1.5">
+                <Icon name="clock" size={13} /> {event.startTime}
+              </span>
+            )}
             {event.location &&
               (event.locationUrl ? (
                 <a
                   href={event.locationUrl}
-                  className="chip hover:text-white"
+                  className="chip inline-flex items-center gap-1.5 hover:text-white"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  📍 {event.location}
+                  <Icon name="pin" size={13} /> {event.location}
                 </a>
               ) : (
-                <span className="chip">📍 {event.location}</span>
+                <span className="chip inline-flex items-center gap-1.5">
+                  <Icon name="pin" size={13} /> {event.location}
+                </span>
               ))}
           </div>
         </div>

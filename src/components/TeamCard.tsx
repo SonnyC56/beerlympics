@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { Id } from "@convex/_generated/dataModel";
 import { Avatar } from "@/components/primitives";
+import { Icon, Mascot } from "@/components/Icon";
 import { colorHex } from "@/lib/teamColors";
 
 export type TeamCardMember = {
@@ -60,10 +61,10 @@ export function TeamCard({
         style={{ background: `linear-gradient(90deg, ${hex}, ${hex}22)` }}
       />
       <div
-        className="pointer-events-none absolute -right-6 -top-6 text-[110px] leading-none opacity-10"
+        className="pointer-events-none absolute -right-6 -top-6 leading-none opacity-10"
         style={{ color: hex }}
       >
-        {team.emoji}
+        <Mascot name={team.emoji} size={110} />
       </div>
 
       {pinnedLabel && (
@@ -78,10 +79,10 @@ export function TeamCard({
       <Link href={`/teams/${team._id}`} className="block px-5 pb-4 pt-5">
         <div className="flex items-start gap-3">
           <span
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-3xl"
+            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
             style={{ background: `${hex}1f`, border: `1px solid ${hex}66` }}
           >
-            {team.emoji}
+            <Mascot name={team.emoji} size={30} />
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
@@ -138,8 +139,11 @@ export function TeamCard({
         </div>
 
         {captain && (
-          <div className="mt-2 text-xs text-white/45">
-            👑 Captain {captain.emoji} {captain.name}
+          <div className="mt-2 flex items-center gap-1 text-xs text-white/45">
+            <Icon name="crown" size={14} />
+            <span>Captain</span>
+            <Mascot name={captain.emoji} size={14} />
+            <span>{captain.name}</span>
           </div>
         )}
       </Link>

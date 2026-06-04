@@ -2,14 +2,9 @@
 
 import { COLOR_TOKENS, TEAM_COLORS, colorHex } from "@/lib/teamColors";
 import { cx } from "./primitives";
+import { MASCOT_KEYS, Mascot } from "./Icon";
 
-const EMOJI_SET = [
-  "🍺", "🍻", "🥃", "🥤", "🏓", "🎲", "🌽", "🏐", "🪜", "⚔️",
-  "🦁", "🐉", "🦅", "🦈", "🐺", "🐍", "🦖", "🐙", "🦄", "🐝",
-  "⭐", "🔥", "💀", "👑", "💎", "⚡", "🌊", "🌶️", "🍀", "🚀",
-  "🏆", "🥇", "🎯", "🪩", "🎸", "🤘", "😎", "🤠", "👽", "🤖",
-];
-
+/** Pick a mascot icon (stored in the `emoji` field). Replaces the old emoji grid. */
 export function EmojiPicker({
   value,
   onChange,
@@ -19,19 +14,20 @@ export function EmojiPicker({
 }) {
   return (
     <div className="grid grid-cols-8 gap-1.5">
-      {EMOJI_SET.map((e) => (
+      {MASCOT_KEYS.map((key) => (
         <button
-          key={e}
+          key={key}
           type="button"
-          onClick={() => onChange(e)}
+          onClick={() => onChange(key)}
+          aria-label={key}
           className={cx(
-            "flex aspect-square items-center justify-center rounded-xl text-xl transition",
-            value === e
-              ? "bg-[var(--color-gold-500)]/25 ring-2 ring-[var(--color-gold-500)]"
-              : "bg-white/5 hover:bg-white/10",
+            "flex aspect-square items-center justify-center rounded-xl transition",
+            value === key
+              ? "bg-[var(--color-gold-500)]/25 text-[var(--color-gold-300)] ring-2 ring-[var(--color-gold-500)]"
+              : "bg-white/5 text-white/80 hover:bg-white/10",
           )}
         >
-          {e}
+          <Mascot name={key} size={22} />
         </button>
       ))}
     </div>

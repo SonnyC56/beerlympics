@@ -10,12 +10,15 @@ import {
   useNow,
 } from "@/components/primitives";
 import { Leaderboard, Podium, type StandingTeam } from "@/components/Leaderboard";
-import { categoryEmoji, timeAgo } from "@/lib/format";
+import { Icon } from "@/components/Icon";
+import { GameArt } from "@/components/gameArt";
+import { activityIcon, categoryLabel, timeAgo } from "@/lib/format";
 
 type GameLite = {
   _id: string;
   name: string;
   emoji: string;
+  art?: string;
   category: string;
   status: "scheduled" | "active" | "completed" | "locked";
 };
@@ -41,7 +44,7 @@ export default function ScoreboardPage() {
   if (!event) {
     return (
       <EmptyState
-        emoji="🏟️"
+        icon="stadium"
         title="No games yet"
         subtitle="The scoreboard lights up once the Beerlympics is set up."
         action={
@@ -62,8 +65,8 @@ export default function ScoreboardPage() {
     <div className="space-y-5">
       {/* Header */}
       <section className="panel stadium-grid relative overflow-hidden p-5">
-        <div className="pointer-events-none absolute -right-6 -top-6 text-[110px] opacity-10">
-          🏆
+        <div className="pointer-events-none absolute -right-6 -top-6 opacity-10">
+          <Icon name="trophy" size={110} />
         </div>
         <div className="relative flex items-start justify-between gap-3">
           <div>
@@ -86,17 +89,17 @@ export default function ScoreboardPage() {
           <div className="flex shrink-0 flex-col gap-1.5">
             <Link
               href="/scoreboard/tv"
-              className="btn btn-ghost px-3.5 py-2 text-sm"
+              className="btn btn-ghost inline-flex items-center gap-1.5 px-3.5 py-2 text-sm"
               title="Big-screen scoreboard"
             >
-              📺 TV scoreboard
+              <Icon name="tv" size={16} /> TV scoreboard
             </Link>
             <Link
               href="/scoreboard/tv/reel"
-              className="btn btn-ghost px-3.5 py-2 text-sm"
+              className="btn btn-ghost inline-flex items-center gap-1.5 px-3.5 py-2 text-sm"
               title="Big-screen photo slideshow"
             >
-              🎞️ Photo reel
+              <Icon name="film" size={16} /> Photo reel
             </Link>
           </div>
         </div>
@@ -123,12 +126,12 @@ export default function ScoreboardPage() {
                     ? "border-[var(--color-win)]/40 bg-[var(--color-win)]/10 text-[var(--color-win)]"
                     : "border-white/10 bg-white/4 text-white/55",
               )}
-              title={`${g.name} • ${categoryEmoji(g.category)} ${g.category}`}
+              title={`${g.name} - ${categoryLabel(g.category)}`}
             >
-              <span>{g.emoji}</span>
+              <GameArt artKey={g.art} size={14} />
               <span className="max-w-[7.5rem] truncate">{g.name}</span>
               {g.status === "active" && <span className="live-dot" />}
-              {g.status === "completed" && <span>✓</span>}
+              {g.status === "completed" && <Icon name="check" size={14} />}
             </span>
           ))}
         </section>
@@ -141,7 +144,7 @@ export default function ScoreboardPage() {
         ) : (
           <div className="panel p-2">
             <EmptyState
-              emoji="📊"
+              icon="chart"
               title="No scores on the board"
               subtitle="Once teams start winning matches, points roll in here automatically."
             />
@@ -153,7 +156,9 @@ export default function ScoreboardPage() {
       <section className="panel p-5">
         <div className="mb-3 flex items-center gap-2">
           {live && <span className="live-dot" />}
-          <h2 className="font-display text-xl">📣 The Feed</h2>
+          <h2 className="flex items-center gap-2 font-display text-xl">
+            <Icon name="megaphone" size={20} /> The Feed
+          </h2>
         </div>
         {feed === undefined ? (
           <Spinner />
@@ -161,7 +166,9 @@ export default function ScoreboardPage() {
           <ul className="space-y-2.5">
             {(feed as FeedItem[]).map((a) => (
               <li key={a._id} className="flex items-start gap-3 text-sm animate-rise">
-                <span className="text-lg leading-tight">{a.emoji ?? "•"}</span>
+                <span className="leading-tight text-white/80">
+                  <Icon name={activityIcon(a.kind)} size={18} />
+                </span>
                 <div className="flex-1">
                   <span className="text-white/85">{a.message}</span>
                   <span className="ml-2 whitespace-nowrap text-xs text-white/35">

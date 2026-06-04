@@ -43,8 +43,7 @@ export const award = mutation({
 
     await recordActivity(ctx, event._id, {
       kind: "bonus",
-      message: `${game.emoji} ${team.emoji} ${team.name} scored ${points >= 0 ? "+" : ""}${points} in ${game.name}${note ? ` — ${note.trim()}` : ""}`,
-      emoji: game.emoji,
+      message: `${team.name} scored ${points >= 0 ? "+" : ""}${points} in ${game.name}${note ? ` — ${note.trim()}` : ""}`,
       teamId,
     });
     return true;

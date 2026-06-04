@@ -54,8 +54,7 @@ export const record = mutation({
     });
     await recordActivity(ctx, event._id, {
       kind: "media",
-      message: `${user?.emoji ?? "📸"} ${user?.name ?? "Someone"} captured a ${args.kind} for the reel`,
-      emoji: args.kind === "video" ? "🎬" : "📸",
+      message: `${user?.name ?? "Someone"} captured a ${args.kind} for the reel`,
       teamId: args.teamId,
     });
     return mediaId;
@@ -123,7 +122,7 @@ export const forGame = query({
 });
 
 /**
- * Highlight reel: favorites in capture order (oldest→newest) so a host can
+ * Highlight reel: favorites in capture order (oldest to newest) so a host can
  * stitch them into a chronological recap.
  */
 export const highlightReel = query({

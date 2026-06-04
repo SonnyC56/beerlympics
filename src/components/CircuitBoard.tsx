@@ -2,6 +2,8 @@
 
 import type { Id } from "@convex/_generated/dataModel";
 import { TeamBadge, cx } from "@/components/primitives";
+import { Icon, Mascot } from "@/components/Icon";
+import { GameArt } from "@/components/gameArt";
 import { colorHex } from "@/lib/teamColors";
 
 export type CircuitTeam = {
@@ -15,6 +17,7 @@ type BoardGame = {
   _id: Id<"games">;
   name: string;
   emoji: string;
+  art?: string;
   category: string;
 } | null;
 
@@ -39,6 +42,7 @@ export type UpNextMatch = {
   teams: CircuitTeam[];
   gameName?: string;
   gameEmoji?: string;
+  gameArt?: string;
 };
 
 /** Two TeamBadges with an animated VS pill between them. */
@@ -83,7 +87,7 @@ export function VersusRow({
             className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs font-bold"
             style={{ background: `${hex}1f`, color: hex, border: `1px solid ${hex}44` }}
           >
-            {t.emoji} {t.name}
+            <Mascot name={t.emoji} size={14} /> {t.name}
           </span>
         );
       })}
@@ -139,7 +143,7 @@ export function CircuitBoard({
                 key={m._id}
                 className="panel-tight flex items-center gap-3 px-4 py-3"
               >
-                <span className="text-xl">{m.gameEmoji ?? "🎯"}</span>
+                <GameArt artKey={m.gameArt} size={20} title={m.gameName ?? "Match"} />
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex items-center gap-2 text-[11px] uppercase tracking-widest text-white/40">
                     <span className="truncate">{m.gameName ?? "Match"}</span>
@@ -201,7 +205,7 @@ function StationCard({
     >
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-lg">{game?.emoji ?? "🎯"}</span>
+          <GameArt artKey={game?.art} size={18} title={game?.name ?? "Station"} />
           <div className="leading-tight">
             <div className="font-display text-base text-white">{station.name}</div>
             {game && (
@@ -218,8 +222,8 @@ function StationCard({
         <div className="rounded-2xl bg-black/30 p-3">
           <VersusRow teams={match.teams} />
           {tappable && (
-            <div className="mt-2 text-center text-[11px] font-bold uppercase tracking-widest text-[var(--color-gold-400)]">
-              Tap to report result →
+            <div className="mt-2 flex items-center justify-center gap-1 text-center text-[11px] font-bold uppercase tracking-widest text-[var(--color-gold-400)]">
+              Tap to report result <Icon name="arrowRight" size={12} />
             </div>
           )}
         </div>
@@ -229,8 +233,8 @@ function StationCard({
           Open — waiting for the next match
         </div>
       ) : (
-        <div className="rounded-2xl bg-white/4 px-3 py-4 text-sm text-white/40">
-          🔒 Closed for now
+        <div className="flex items-center gap-1.5 rounded-2xl bg-white/4 px-3 py-4 text-sm text-white/40">
+          <Icon name="lock" size={14} /> Closed for now
         </div>
       )}
     </div>

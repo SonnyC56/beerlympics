@@ -175,8 +175,7 @@ export const award = mutation({
     const team = await ctx.db.get(teamId);
     await recordActivity(ctx, event._id, {
       kind: "bonus",
-      message: `${signed >= 0 ? "➕" : "➖"} ${team?.emoji ?? ""} ${team?.name ?? "Team"} ${signed >= 0 ? "earned" : "lost"} ${Math.abs(signed)} pts${note ? ` — ${note}` : ""}`,
-      emoji: signed >= 0 ? "✨" : "⚠️",
+      message: `${team?.name ?? "Team"} ${signed >= 0 ? "earned" : "lost"} ${Math.abs(signed)} pts${note ? ` — ${note}` : ""}`,
       teamId,
     });
     return true;

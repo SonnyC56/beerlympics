@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -11,7 +11,21 @@ import {
   cx,
   useAction,
 } from "@/components/primitives";
-import { HostField, HostSectionTitle } from "./HostKit";
+import { Icon } from "@/components/Icon";
+import type { IconName } from "@/components/Icon";
+import { HostField } from "./HostKit";
+
+/** Section header with a leading SVG icon (emoji-free). */
+function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-1.5 font-display text-xl text-white">
+        <span className="inline-flex shrink-0">{icon}</span>
+        {title}
+      </h2>
+    </div>
+  );
+}
 
 type Team = {
   _id: Id<"teams">;
@@ -22,13 +36,22 @@ type Team = {
 
 type Reason = "bonus" | "penalty" | "manual";
 
-const REASONS: { value: Reason; label: string; emoji: string }[] = [
-  { value: "bonus", label: "Bonus", emoji: "✨" },
-  { value: "penalty", label: "Penalty", emoji: "⚠️" },
-  { value: "manual", label: "Manual", emoji: "✍️" },
+const REASONS: { value: Reason; label: string; icon: IconName }[] = [
+  { value: "bonus", label: "Bonus", icon: "sparkle" },
+  { value: "penalty", label: "Penalty", icon: "warning" },
+  { value: "manual", label: "Manual", icon: "edit" },
 ];
 
-const QUICK_EMOJIS = ["📣", "🔥", "🍺", "🎉", "⚡", "🏆", "🚨", "🎲"];
+const QUICK_ICONS: IconName[] = [
+  "megaphone",
+  "flame",
+  "beer",
+  "party",
+  "bolt",
+  "trophy",
+  "alert",
+  "dice",
+];
 
 export function HostScoring() {
   const teams = useQuery(api.teams.list, {}) as Team[] | undefined;
@@ -60,7 +83,7 @@ function AwardPoints({ teams }: { teams: Team[] | undefined }) {
 
   return (
     <section className="panel p-5">
-      <HostSectionTitle emoji="🎯" title="Award Points" />
+      <SectionTitle icon={<Icon name="target" size={20} />} title="Award Points" />
       {teams === undefined ? (
         <Spinner />
       ) : teams.length === 0 ? (
@@ -77,7 +100,7 @@ function AwardPoints({ teams }: { teams: Team[] | undefined }) {
             >
               {teams.map((t) => (
                 <option key={t._id} value={t._id}>
-                  {t.emoji} {t.name}
+                  {t.name}
                 </option>
               ))}
             </select>
@@ -101,7 +124,7 @@ function AwardPoints({ teams }: { teams: Team[] | undefined }) {
                   type="button"
                   onClick={() => setReason(r.value)}
                   className={cx(
-                    "rounded-xl border px-2 py-2.5 text-sm font-bold transition",
+                    "inline-flex items-center justify-center gap-1.5 rounded-xl border px-2 py-2.5 text-sm font-bold transition",
                     reason === r.value
                       ? r.value === "penalty"
                         ? "border-[var(--color-loss)] bg-[var(--color-loss)]/15 text-[var(--color-loss)]"
@@ -109,7 +132,7 @@ function AwardPoints({ teams }: { teams: Team[] | undefined }) {
                       : "border-white/10 bg-white/4 text-white/60",
                   )}
                 >
-                  {r.emoji} {r.label}
+                  <Icon name={r.icon} size={14} /> {r.label}
                 </button>
               ))}
             </div>
@@ -170,7 +193,7 @@ function AwardPoints({ teams }: { teams: Team[] | undefined }) {
                   }),
                 reason === "penalty"
                   ? `−${amount} pts applied`
-                  : `+${amount} pts awarded! ✨`,
+                  : `+${amount} pts awarded!`,
               ).then((ok) => ok && setNote(""))
             }
           >
@@ -191,41 +214,42 @@ function Announce() {
   const announce = useMutation(api.activity.announce);
 
   const [message, setMessage] = useState("");
-  const [emoji, setEmoji] = useState("📣");
+  const [emoji, setEmoji] = useState<IconName>("megaphone");
 
   return (
     <section className="panel p-5">
-      <HostSectionTitle emoji="📣" title="Announce" />
+      <SectionTitle icon={<Icon name="megaphone" size={20} />} title="Announce" />
       <p className="mb-3 text-sm text-white/55">
         Push a message to the live activity feed everyone sees.
       </p>
       <div className="space-y-3">
         <div className="flex flex-wrap gap-1.5">
-          {QUICK_EMOJIS.map((e) => (
+          {QUICK_ICONS.map((name) => (
             <button
-              key={e}
+              key={name}
               type="button"
-              onClick={() => setEmoji(e)}
+              aria-label={name}
+              onClick={() => setEmoji(name)}
               className={cx(
-                "flex h-10 w-10 items-center justify-center rounded-xl text-xl transition",
-                emoji === e
-                  ? "bg-[var(--color-gold-500)]/25 ring-2 ring-[var(--color-gold-500)]"
+                "flex h-10 w-10 items-center justify-center rounded-xl text-white/85 transition",
+                emoji === name
+                  ? "bg-[var(--color-gold-500)]/25 text-[var(--color-gold-300)] ring-2 ring-[var(--color-gold-500)]"
                   : "bg-white/5 hover:bg-white/10",
               )}
             >
-              {e}
+              <Icon name={name} size={20} />
             </button>
           ))}
         </div>
         <textarea
           className="field min-h-20 resize-none"
-          placeholder="Final round starts in 5! Grab your beers 🍺"
+          placeholder="Final round starts in 5! Grab your beers"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           maxLength={200}
         />
         <button
-          className="btn btn-gold w-full"
+          className="btn btn-gold inline-flex w-full items-center justify-center gap-1.5"
           disabled={!identity.deviceId || !message.trim()}
           onClick={() =>
             run(
@@ -235,11 +259,11 @@ function Announce() {
                   message: message.trim(),
                   emoji,
                 }),
-              "Announced to everyone! 📣",
+              "Announced to everyone!",
             ).then((ok) => ok && setMessage(""))
           }
         >
-          📣 Broadcast
+          <Icon name="megaphone" size={16} /> Broadcast
         </button>
       </div>
     </section>

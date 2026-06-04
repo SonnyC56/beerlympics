@@ -15,6 +15,7 @@ import {
   useNow,
 } from "@/components/primitives";
 import { SpinWheel, type WheelSpot } from "@/components/SpinWheel";
+import { Icon } from "@/components/Icon";
 import { colorHex } from "@/lib/teamColors";
 import { timeAgo } from "@/lib/format";
 
@@ -92,19 +93,25 @@ export function WheelGame({ game }: { game: { _id: Id<"games">; name: string; em
               </div>
             </div>
           ) : (
-            <div className="text-sm text-white/35">
-              {spinning ? "Round and round…" : "Give it a spin 🎡"}
+            <div className="flex items-center justify-center gap-1.5 text-sm text-white/35">
+              {spinning ? (
+                "Round and round…"
+              ) : (
+                <>
+                  Give it a spin <Icon name="wheel" size={16} />
+                </>
+              )}
             </div>
           )}
         </div>
 
         {/* everyone can practice-spin */}
         <button
-          className="btn btn-ghost mt-1"
+          className="btn btn-ghost mt-1 inline-flex items-center justify-center gap-1.5"
           disabled={spinning}
           onClick={() => spinRandom(null)}
         >
-          🎡 Spin it
+          <Icon name="wheel" size={16} /> Spin it
         </button>
       </section>
 
@@ -113,7 +120,7 @@ export function WheelGame({ game }: { game: { _id: Id<"games">; name: string; em
         <section className="panel p-5">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm font-bold text-[var(--color-gold-300)]">
-              👑 Record a spin
+              <Icon name="crown" size={16} /> Record a spin
             </div>
             <button
               className="text-xs font-bold text-white/45 underline"
@@ -158,11 +165,11 @@ export function WheelGame({ game }: { game: { _id: Id<"games">; name: string; em
               2. Spin for them, or enter what the real wheel hit
             </div>
             <button
-              className="btn btn-gold w-full"
+              className="btn btn-gold w-full inline-flex items-center justify-center gap-1.5"
               disabled={!teamId || spinning || !identity.deviceId}
               onClick={() => teamId && spinRandom(teamId)}
             >
-              🎡 Spin &amp; record{selectedTeam ? ` for ${selectedTeam.name}` : ""}
+              <Icon name="wheel" size={16} /> Spin &amp; record{selectedTeam ? ` for ${selectedTeam.name}` : ""}
             </button>
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
               {spots.map((s, i) => (
@@ -187,7 +194,9 @@ export function WheelGame({ game }: { game: { _id: Id<"games">; name: string; em
 
       {/* History */}
       <section className="panel p-5">
-        <h2 className="mb-3 font-display text-xl">🎡 Recent Spins</h2>
+        <h2 className="mb-3 flex items-center gap-2 font-display text-xl">
+          <Icon name="wheel" size={20} /> Recent Spins
+        </h2>
         {history && history.length > 0 ? (
           <ul className="space-y-2">
             {history.map((h) => (
@@ -276,13 +285,13 @@ function SpotsEditor({
                 onClick={() => remove(i)}
                 title="Remove"
               >
-                ✕
+                <Icon name="close" size={16} />
               </button>
             </div>
           ))}
         </div>
-        <button className="btn btn-ghost w-full" onClick={add}>
-          + Add spot
+        <button className="btn btn-ghost w-full inline-flex items-center justify-center gap-1.5" onClick={add}>
+          <Icon name="plus" size={16} /> Add spot
         </button>
         <button
           className="btn btn-gold w-full"

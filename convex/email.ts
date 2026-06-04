@@ -51,13 +51,12 @@ function shell(inner: string): string {
   return `<!doctype html><html><body style="margin:0;background:#07060a;font-family:Helvetica,Arial,sans-serif;color:#f4f1fa;">
   <div style="max-width:560px;margin:0 auto;padding:32px 20px;">
     <div style="text-align:center;margin-bottom:8px;">
-      <div style="font-size:40px;line-height:1;">🏅🍺</div>
       <div style="font-size:30px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#ffd24d;margin-top:8px;">Beerlympics</div>
     </div>
     <div style="background:#110e1c;border:1px solid rgba(255,255,255,0.08);border-radius:20px;padding:28px 24px;">
       ${inner}
     </div>
-    <div style="text-align:center;color:#7c7490;font-size:12px;margin-top:18px;">Sent from the Beerlympics app · may the best team win 🥇</div>
+    <div style="text-align:center;color:#7c7490;font-size:12px;margin-top:18px;">Sent from the Beerlympics app · may the best team win</div>
   </div></body></html>`;
 }
 
@@ -68,8 +67,8 @@ function eventLine(dateIso: string, startTime?: string, location?: string): stri
     day: "numeric",
     year: "numeric",
   });
-  const bits = [`📅 ${date}${startTime ? ` · ${startTime}` : ""}`];
-  if (location) bits.push(`📍 ${location}`);
+  const bits = [`${date}${startTime ? ` · ${startTime}` : ""}`];
+  if (location) bits.push(location);
   return bits
     .map(
       (b) =>
@@ -110,12 +109,12 @@ export const sendInvite = internalAction({
         ${eventLine(args.dateIso, args.startTime, args.location)}
       </div>
       ${args.note ? `<div style="font-size:15px;color:#cfc8e0;font-style:italic;border-left:3px solid #ffd24d;padding-left:12px;margin:14px 0;">"${args.note}"</div>` : ""}
-      ${button(args.link, "RSVP + Pick Your Team →")}
+      ${button(args.link, "RSVP + Pick Your Team")}
       <div style="text-align:center;font-size:12px;color:#7c7490;margin-top:8px;">or paste this link: <br/><span style="color:#9b93b3;">${args.link}</span></div>
     `;
     const result = await sendViaResend({
       to: args.to,
-      subject: `🍺 You're invited to ${args.eventName}`,
+      subject: `You're invited to ${args.eventName}`,
       html: shell(inner),
     });
     await ctx.runMutation(internal.invites.markEmail, {
@@ -138,19 +137,19 @@ export const sendRsvpConfirmation = internalAction({
   },
   handler: async (_ctx, args) => {
     const inner = `
-      <div style="font-size:22px;font-weight:800;color:#36e07a;margin-bottom:6px;">You're locked in, ${args.name}! ✅</div>
+      <div style="font-size:22px;font-weight:800;color:#36e07a;margin-bottom:6px;">You're locked in, ${args.name}!</div>
       <div style="font-size:16px;color:#cfc8e0;line-height:1.5;">
         Your RSVP for <b style="color:#ffd24d;">${args.eventName}</b> is confirmed. Start stretching those flip-cup wrists.
       </div>
       <div style="margin:18px 0;padding:14px 16px;background:#181327;border-radius:14px;">
         ${eventLine(args.dateIso, args.startTime, args.location)}
       </div>
-      <div style="font-size:14px;color:#9b93b3;">See you on the field. 🥇</div>
+      <div style="font-size:14px;color:#9b93b3;">See you on the field.</div>
     `;
     // Best-effort: confirmation failures are non-critical, so just log.
     const result = await sendViaResend({
       to: args.to,
-      subject: `✅ RSVP confirmed — ${args.eventName}`,
+      subject: `RSVP confirmed — ${args.eventName}`,
       html: shell(inner),
     });
     if (!result.ok) {

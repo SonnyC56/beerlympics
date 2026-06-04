@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -11,7 +11,52 @@ import {
   cx,
   useAction,
 } from "@/components/primitives";
-import { HostSectionTitle, HostStat, MiniButton } from "./HostKit";
+import { Icon, Mascot } from "@/components/Icon";
+import type { IconName } from "@/components/Icon";
+import { MiniButton } from "./HostKit";
+
+/** Section header with a leading SVG icon (emoji-free). */
+function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-1.5 font-display text-xl text-white">
+        <span className="inline-flex shrink-0">{icon}</span>
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+/** A compact stat tile with a leading SVG icon. */
+function StatTile({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: number | string;
+  tone?: "gold" | "live" | "win";
+}) {
+  const color =
+    tone === "gold"
+      ? "text-[var(--color-gold-400)]"
+      : tone === "live"
+        ? "text-[var(--color-live)]"
+        : tone === "win"
+          ? "text-[var(--color-win)]"
+          : "text-white";
+  return (
+    <div className="panel-tight flex flex-col items-center px-2 py-3">
+      <div className="flex h-4 items-center text-white/80">{icon}</div>
+      <div className={cx("font-display text-2xl tabular-nums", color)}>{value}</div>
+      <div className="text-center text-[10px] uppercase tracking-widest text-white/40">
+        {label}
+      </div>
+    </div>
+  );
+}
 
 type TeamMember = {
   _id: Id<"players">;
@@ -38,10 +83,10 @@ type Guest = {
   teamId?: Id<"teams">;
 };
 
-const STATUS_META: Record<string, { emoji: string; label: string; color: string }> = {
-  yes: { emoji: "✅", label: "Going", color: "var(--color-win)" },
-  maybe: { emoji: "🤔", label: "Maybe", color: "var(--color-gold-400)" },
-  no: { emoji: "❌", label: "Out", color: "var(--color-loss)" },
+const STATUS_META: Record<string, { icon: IconName; label: string; color: string }> = {
+  yes: { icon: "check", label: "Going", color: "var(--color-win)" },
+  maybe: { icon: "thinking", label: "Maybe", color: "var(--color-gold-400)" },
+  no: { icon: "close", label: "Out", color: "var(--color-loss)" },
 };
 
 export function HostTeams() {
@@ -60,7 +105,7 @@ export function HostTeams() {
     <div className="space-y-5">
       {/* ── Teams ──────────────────────────────────────────────────────── */}
       <section className="panel p-5">
-        <HostSectionTitle emoji="🚩" title="Teams" />
+        <SectionTitle icon={<Icon name="flag" size={20} />} title="Teams" />
         {teams === undefined ? (
           <Spinner />
         ) : teams.length === 0 ? (
@@ -79,16 +124,16 @@ export function HostTeams() {
       {/* ── RSVP summary ───────────────────────────────────────────────── */}
       {guests && (
         <section className="grid grid-cols-4 gap-2.5">
-          <HostStat emoji="✅" label="Going" value={going} tone="win" />
-          <HostStat emoji="🤔" label="Maybe" value={maybe} />
-          <HostStat emoji="❌" label="Out" value={out} />
-          <HostStat emoji="🍻" label="Heads" value={headcount} tone="gold" />
+          <StatTile icon={<Icon name="check" size={16} />} label="Going" value={going} tone="win" />
+          <StatTile icon={<Icon name="thinking" size={16} />} label="Maybe" value={maybe} />
+          <StatTile icon={<Icon name="close" size={16} />} label="Out" value={out} />
+          <StatTile icon={<Icon name="beers" size={16} />} label="Heads" value={headcount} tone="gold" />
         </section>
       )}
 
       {/* ── Guest list ─────────────────────────────────────────────────── */}
       <section className="panel p-5">
-        <HostSectionTitle emoji="📋" title="Guest List" />
+        <SectionTitle icon={<Icon name="list" size={20} />} title="Guest List" />
         {guests === undefined ? (
           <Spinner />
         ) : guests.length === 0 ? (
@@ -103,7 +148,9 @@ export function HostTeams() {
                   className="flex items-center justify-between gap-2 rounded-xl bg-white/4 px-3 py-2.5"
                 >
                   <div className="flex min-w-0 items-center gap-2.5">
-                    <span className="text-lg">{g.emoji}</span>
+                    <span className="text-lg text-white/85">
+                      <Mascot name={g.emoji} size={18} />
+                    </span>
                     <div className="min-w-0">
                       <div className="truncate font-semibold text-white">
                         {g.name}
@@ -121,10 +168,10 @@ export function HostTeams() {
                     </div>
                   </div>
                   <span
-                    className="shrink-0 text-xs font-bold"
+                    className="inline-flex shrink-0 items-center gap-1 text-xs font-bold"
                     style={{ color: meta.color }}
                   >
-                    {meta.emoji} {meta.label}
+                    <Icon name={meta.icon} size={14} /> {meta.label}
                   </span>
                 </div>
               );
@@ -161,8 +208,12 @@ function TeamRow({ team }: { team: Team }) {
               key={m._id}
               className="inline-flex items-center gap-1 rounded-full bg-black/30 px-2 py-1 text-[11px] text-white/65"
             >
-              {m.emoji} {m.name}
-              {m.role === "captain" && <span title="Captain">👑</span>}
+              <Mascot name={m.emoji} size={14} /> {m.name}
+              {m.role === "captain" && (
+                <span title="Captain" className="text-[var(--color-gold-300)]">
+                  <Icon name="crown" size={12} />
+                </span>
+              )}
             </span>
           ))}
         </div>

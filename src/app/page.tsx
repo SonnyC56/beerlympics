@@ -6,14 +6,18 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useIdentity } from "@/lib/identity";
 import {
-  EmptyState,
   Spinner,
   TeamBadge,
-  cx,
   useAction,
   useNow,
 } from "@/components/primitives";
-import { countdownTo, formatEventDate, timeAgo, placeMedal } from "@/lib/format";
+import { Icon, type IconName, Mascot, Medal } from "@/components/Icon";
+import {
+  activityIcon,
+  countdownTo,
+  formatEventDate,
+  timeAgo,
+} from "@/lib/format";
 
 export default function HomePage() {
   const event = useQuery(api.events.get, {});
@@ -22,7 +26,7 @@ export default function HomePage() {
   return <EventHome />;
 }
 
-// ── No event yet → host setup ─────────────────────────────────────────────────
+// ── No event yet -> host setup ────────────────────────────────────────────────
 function CreateEventCard() {
   const identity = useIdentity();
   const create = useMutation(api.events.create);
@@ -34,11 +38,15 @@ function CreateEventCard() {
 
   return (
     <div className="space-y-5 py-6">
-      <EmptyState
-        emoji="🏟️"
-        title="Start your Beerlympics"
-        subtitle="Set up the event, then invite your crew. You'll become the host."
-      />
+      <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+        <div className="animate-float text-[var(--color-gold-400)]">
+          <Icon name="stadium" size={48} />
+        </div>
+        <div className="font-display text-2xl text-white">Start your Beerlympics</div>
+        <div className="max-w-xs text-sm text-white/55">
+          Set up the event, then invite your crew. You'll become the host.
+        </div>
+      </div>
       <div className="panel space-y-4 p-5">
         <Field label="Event name">
           <input className="field" value={name} onChange={(e) => setName(e.target.value)} />
@@ -82,7 +90,7 @@ function CreateEventCard() {
                   tagline,
                   location: location || undefined,
                 }),
-              "Event created — you're the host! 👑",
+              "Event created — you're the host!",
             )
           }
         >
@@ -119,11 +127,13 @@ function EventHome() {
     <div className="space-y-5">
       {/* Hero */}
       <section className="panel stadium-grid relative overflow-hidden p-6 text-center">
-        <div className="pointer-events-none absolute -right-8 -top-8 text-[120px] opacity-10">
-          {event.coverEmoji}
+        <div className="pointer-events-none absolute -right-8 -top-8 opacity-10">
+          <Mascot name={event.coverEmoji} size={120} />
         </div>
         <div className="relative">
-          <div className="text-6xl">{event.coverEmoji}</div>
+          <div className="inline-flex justify-center text-medal">
+            <Mascot name={event.coverEmoji} size={60} />
+          </div>
           <h1 className="mt-2 font-display text-4xl leading-none text-medal">
             {event.name}
           </h1>
@@ -131,16 +141,22 @@ function EventHome() {
             <p className="mt-2 text-sm text-white/60">{event.tagline}</p>
           )}
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-white/70">
-            <span className="chip">📅 {formatEventDate(event.dateIso)}</span>
-            {event.startTime && <span className="chip">⏰ {event.startTime}</span>}
+            <span className="chip inline-flex items-center gap-1.5">
+              <Icon name="calendar" size={14} /> {formatEventDate(event.dateIso)}
+            </span>
+            {event.startTime && (
+              <span className="chip inline-flex items-center gap-1.5">
+                <Icon name="clock" size={14} /> {event.startTime}
+              </span>
+            )}
             {event.location && (
               <a
                 href={event.locationUrl}
-                className="chip hover:text-white"
+                className="chip inline-flex items-center gap-1.5 hover:text-white"
                 target="_blank"
                 rel="noreferrer"
               >
-                📍 {event.location}
+                <Icon name="pin" size={14} /> {event.location}
               </a>
             )}
           </div>
@@ -149,8 +165,8 @@ function EventHome() {
           {!live && !finished && (
             <div className="mt-5">
               {cd.isPast ? (
-                <div className="font-display text-2xl text-[var(--color-gold-400)]">
-                  It's go time 🍺
+                <div className="inline-flex items-center justify-center gap-2 font-display text-2xl text-[var(--color-gold-400)]">
+                  It's go time <Icon name="beer" size={24} />
                 </div>
               ) : (
                 <div className="flex items-center justify-center gap-2">
@@ -192,25 +208,31 @@ function EventHome() {
         href="/games"
         className="panel-tight flex items-center gap-3 p-4 transition hover:bg-white/[0.03]"
       >
-        <span className="text-2xl">🎮</span>
+        <span className="text-white"><Icon name="games" size={24} /></span>
         <div className="flex-1">
           <div className="font-bold text-white">The Games &amp; Rules</div>
           <div className="text-xs text-white/50">
             Browse every game, watch the art, and learn how each one is played.
           </div>
         </div>
-        <span className="text-sm text-[var(--color-gold-400)]">Open →</span>
+        <span className="inline-flex items-center gap-1 text-sm text-[var(--color-gold-400)]">
+          Open <Icon name="arrowRight" size={14} />
+        </span>
       </Link>
 
       {/* Live podium snapshot */}
       {(live || finished) && standings && standings.teams.length > 0 && (
         <section className="panel p-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="font-display text-xl">
-              {finished ? "🏆 Final Standings" : "🔥 Leaderboard"}
+            <h2 className="inline-flex items-center gap-2 font-display text-xl">
+              <Icon name={finished ? "trophy" : "flame"} size={20} />
+              {finished ? "Final Standings" : "Leaderboard"}
             </h2>
-            <Link href="/scoreboard" className="text-sm text-[var(--color-gold-400)]">
-              Full board →
+            <Link
+              href="/scoreboard"
+              className="inline-flex items-center gap-1 text-sm text-[var(--color-gold-400)]"
+            >
+              Full board <Icon name="arrowRight" size={14} />
             </Link>
           </div>
           <div className="space-y-2">
@@ -220,8 +242,8 @@ function EventHome() {
                 className="flex items-center justify-between rounded-2xl bg-white/4 px-4 py-3"
               >
                 <div className="flex items-center gap-3">
-                  <span className="font-display text-xl text-white/50">
-                    {placeMedal(t.rank) || `#${t.rank}`}
+                  <span className="inline-flex items-center font-display text-xl text-white/50">
+                    {t.rank <= 3 ? <Medal rank={t.rank} size={20} /> : `#${t.rank}`}
                   </span>
                   <TeamBadge emoji={t.emoji} name={t.name} color={t.color} />
                 </div>
@@ -237,20 +259,24 @@ function EventHome() {
       {/* Stats */}
       {stats && (
         <section className="grid grid-cols-3 gap-3">
-          <Stat label="Going" value={stats.going} emoji="🙋" />
-          <Stat label="Teams" value={stats.teams} emoji="🚩" />
-          <Stat label="Headcount" value={stats.headcount} emoji="🍻" />
+          <Stat label="Going" value={stats.going} icon="handRaise" />
+          <Stat label="Teams" value={stats.teams} icon="flag" />
+          <Stat label="Headcount" value={stats.headcount} icon="beers" />
         </section>
       )}
 
       {/* Activity ticker */}
       <section className="panel p-5">
-        <h2 className="mb-3 font-display text-xl">📣 The Feed</h2>
+        <h2 className="mb-3 inline-flex items-center gap-2 font-display text-xl">
+          <Icon name="megaphone" size={20} /> The Feed
+        </h2>
         {feed && feed.length > 0 ? (
           <ul className="space-y-2.5">
             {feed.map((a) => (
               <li key={a._id} className="flex items-start gap-3 text-sm">
-                <span className="text-lg">{a.emoji ?? "•"}</span>
+                <span className="mt-0.5 text-white/70">
+                  <Icon name={activityIcon(a.kind)} size={16} />
+                </span>
                 <div className="flex-1">
                   <span className="text-white/85">{a.message}</span>
                   <span className="ml-2 text-xs text-white/35">
@@ -279,11 +305,11 @@ function CtaBlock({ status, mine }: { status: string; mine: MineRsvp | undefined
   if (status === "live") {
     return (
       <div className="grid grid-cols-2 gap-3">
-        <Link href="/play" className="btn btn-gold">
-          🎯 Enter the Circuit
+        <Link href="/play" className="btn btn-gold inline-flex items-center justify-center gap-2">
+          <Icon name="target" size={18} /> Enter the Circuit
         </Link>
-        <Link href="/scoreboard" className="btn btn-ghost">
-          🏆 Scoreboard
+        <Link href="/scoreboard" className="btn btn-ghost inline-flex items-center justify-center gap-2">
+          <Icon name="trophy" size={18} /> Scoreboard
         </Link>
       </div>
     );
@@ -292,8 +318,14 @@ function CtaBlock({ status, mine }: { status: string; mine: MineRsvp | undefined
     return (
       <Link href="/rsvp" className="panel-tight flex items-center justify-between p-4">
         <div className="flex items-center gap-3">
-          <span className="text-2xl">
-            {mine.player.status === "yes" ? "✅" : mine.player.status === "maybe" ? "🤔" : "❌"}
+          <span className="inline-flex">
+            {mine.player.status === "yes" ? (
+              <Icon name="check" size={24} />
+            ) : mine.player.status === "maybe" ? (
+              <Icon name="thinking" size={24} />
+            ) : (
+              <Icon name="close" size={24} />
+            )}
           </span>
           <div>
             <div className="font-bold">
@@ -308,21 +340,36 @@ function CtaBlock({ status, mine }: { status: string; mine: MineRsvp | undefined
             </div>
           </div>
         </div>
-        <span className="text-sm text-[var(--color-gold-400)]">Edit →</span>
+        <span className="inline-flex items-center gap-1 text-sm text-[var(--color-gold-400)]">
+          Edit <Icon name="arrowRight" size={14} />
+        </span>
       </Link>
     );
   }
   return (
-    <Link href="/rsvp" className="btn btn-gold w-full py-4 text-lg">
-      🍺 RSVP + Pick Your Team
+    <Link
+      href="/rsvp"
+      className="btn btn-gold inline-flex w-full items-center justify-center gap-2 py-4 text-lg"
+    >
+      <Icon name="beer" size={20} /> RSVP + Pick Your Team
     </Link>
   );
 }
 
-function Stat({ label, value, emoji }: { label: string; value: number; emoji: string }) {
+function Stat({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: number;
+  icon: IconName;
+}) {
   return (
     <div className="panel-tight flex flex-col items-center py-4">
-      <div className="text-xl">{emoji}</div>
+      <div className="text-white/80">
+        <Icon name={icon} size={20} />
+      </div>
       <div className="font-display text-3xl text-white">{value}</div>
       <div className="text-[11px] uppercase tracking-widest text-white/40">{label}</div>
     </div>

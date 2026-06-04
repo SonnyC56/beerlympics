@@ -2,6 +2,7 @@
 
 import type { Id } from "@convex/_generated/dataModel";
 import { TeamBadge, cx } from "@/components/primitives";
+import { Icon } from "@/components/Icon";
 import { colorHex } from "@/lib/teamColors";
 
 // ── Shared match shape (from matches.forGame) ─────────────────────────────────
@@ -92,7 +93,7 @@ function SlotRow({
         {placeBadge ? (
           <span>{placeBadge}</span>
         ) : isWinner ? (
-          <span className="text-[var(--color-gold-400)]">✓</span>
+          <Icon name="check" size={14} className="text-[var(--color-gold-400)]" />
         ) : null}
       </span>
     </div>
@@ -140,8 +141,8 @@ export function MatchNode({
         ))}
       </div>
       {stationName && (match.status === "in_progress" || match.status === "queued") && (
-        <div className="border-t border-white/8 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/45">
-          📍 {stationName}
+        <div className="flex items-center gap-1 border-t border-white/8 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/45">
+          <Icon name="pin" size={12} /> {stationName}
         </div>
       )}
     </div>

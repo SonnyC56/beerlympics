@@ -6,6 +6,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useIdentity } from "@/lib/identity";
 import { EmptyState, Sheet, cx, useAction, useNow } from "@/components/primitives";
+import { Icon } from "@/components/Icon";
 import { timeAgo } from "@/lib/format";
 
 export type MediaItem = {
@@ -23,7 +24,7 @@ export type MediaItem = {
 
 /**
  * Masonry gallery of photos/videos. Each tile overlays the uploader + time, a
- * caption, a favorite (⭐) toggle, and a delete affordance for the uploader/host.
+ * caption, a favorite (star) toggle, and a delete affordance for the uploader/host.
  * Tapping a tile opens a fullscreen lightbox.
  */
 export function MediaGrid({ items }: { items: MediaItem[] }) {
@@ -33,7 +34,7 @@ export function MediaGrid({ items }: { items: MediaItem[] }) {
   if (items.length === 0) {
     return (
       <EmptyState
-        emoji="🎞️"
+        icon="film"
         title="No clips yet"
         subtitle="Be the first to capture the action — tap Capture above."
       />
@@ -95,7 +96,7 @@ function MediaTile({
           )
         ) : (
           <div className="flex aspect-square items-center justify-center text-white/30">
-            ⏳
+            <Icon name="clock" size={28} />
           </div>
         )}
 
@@ -117,8 +118,8 @@ function MediaTile({
 
         {/* Kind badge */}
         {item.kind === "video" && (
-          <span className="pointer-events-none absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white/90">
-            🎬 VIDEO
+          <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold text-white/90">
+            <Icon name="film" size={11} /> VIDEO
           </span>
         )}
       </button>
@@ -150,7 +151,7 @@ function FavoriteButton({
         run(
           () =>
             toggle({ deviceId: identity.deviceId!, mediaId: item._id }),
-          item.favorite ? "Removed from the reel" : "Added to the reel ⭐",
+          item.favorite ? "Removed from the reel" : "Added to the reel",
         );
       }}
       disabled={!identity.deviceId}
@@ -164,7 +165,7 @@ function FavoriteButton({
         className,
       )}
     >
-      {item.favorite ? "⭐" : "☆"}
+      <Icon name={item.favorite ? "star" : "starOutline"} size={large ? 22 : 16} />
     </button>
   );
 }
@@ -229,7 +230,7 @@ function Lightbox({
           {canDelete && (
             <button
               type="button"
-              className="btn btn-ghost w-full text-[var(--color-loss)]"
+              className="btn btn-ghost flex w-full items-center justify-center gap-2 text-[var(--color-loss)]"
               onClick={() =>
                 run(
                   async () => {
@@ -242,7 +243,7 @@ function Lightbox({
                 ).then((ok) => ok && onClose())
               }
             >
-              🗑️ Delete
+              <Icon name="trash" size={16} /> Delete
             </button>
           )}
         </div>

@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { colorHex } from "@/lib/teamColors";
+import { Icon, Mascot, type IconName } from "./Icon";
 
 export function cx(...parts: (string | false | null | undefined)[]): string {
   return parts.filter(Boolean).join(" ");
@@ -37,18 +38,24 @@ export function Spinner({ label }: { label?: string }) {
 // ── Empty state ───────────────────────────────────────────────────────────────
 export function EmptyState({
   emoji,
+  icon,
   title,
   subtitle,
   action,
 }: {
-  emoji: string;
+  /** Legacy emoji string (rendered as-is for back-compat callers). */
+  emoji?: string;
+  /** Preferred: a custom icon name (replaces emoji). */
+  icon?: IconName;
   title: string;
   subtitle?: string;
   action?: ReactNode;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
-      <div className="text-5xl animate-float">{emoji}</div>
+      <div className="text-5xl animate-float text-white/80">
+        {icon ? <Icon name={icon} size={48} /> : emoji}
+      </div>
       <div className="font-display text-2xl text-white">{title}</div>
       {subtitle && <div className="max-w-xs text-sm text-white/55">{subtitle}</div>}
       {action && <div className="mt-2">{action}</div>}
@@ -62,6 +69,7 @@ export function Avatar({
   size = 40,
   color,
 }: {
+  /** Mascot key (e.g. "lion"). Named `emoji` for back-compat with the data field. */
   emoji: string;
   size?: number;
   color?: string;
@@ -72,12 +80,12 @@ export function Avatar({
       style={{
         width: size,
         height: size,
-        fontSize: size * 0.55,
+        color: color ? colorHex(color) : "#f4f1fa",
         background: color ? `${colorHex(color)}22` : "rgba(255,255,255,0.06)",
         border: `1px solid ${color ? colorHex(color) : "rgba(255,255,255,0.1)"}`,
       }}
     >
-      {emoji}
+      <Mascot name={emoji} size={Math.round(size * 0.6)} />
     </span>
   );
 }
@@ -99,15 +107,17 @@ export function TeamBadge({
   const hex = colorHex(color);
   const text =
     size === "lg" ? "text-lg" : size === "sm" ? "text-sm" : "text-base";
+  const mascotSize = size === "lg" ? 18 : size === "sm" ? 14 : 16;
   return (
-    <span className={cx("inline-flex items-center gap-2 font-semibold", text, className)}>
+    <span className={cx("inline-flex items-center gap-1.5 font-semibold", text, className)}>
       <span
         className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
         style={{ background: hex, boxShadow: `0 0 10px ${hex}99` }}
       />
-      <span className="truncate">
-        {emoji} {name}
+      <span style={{ color: hex }} className="shrink-0">
+        <Mascot name={emoji} size={mascotSize} />
       </span>
+      <span className="truncate">{name}</span>
     </span>
   );
 }
@@ -177,21 +187,23 @@ export function NumberStepper({
   return (
     <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-black/30 px-2 py-1">
       <button
-        className="h-8 w-8 rounded-full bg-white/8 text-lg font-bold text-white disabled:opacity-30"
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-white/8 font-bold text-white disabled:opacity-30"
         onClick={() => onChange(Math.max(min, value - 1))}
         disabled={value <= min}
         type="button"
+        aria-label="Decrease"
       >
-        −
+        <Icon name="minus" size={18} />
       </button>
       <span className="w-6 text-center font-display text-lg">{value}</span>
       <button
-        className="h-8 w-8 rounded-full bg-white/8 text-lg font-bold text-white disabled:opacity-30"
+        className="flex h-8 w-8 items-center justify-center rounded-full bg-white/8 font-bold text-white disabled:opacity-30"
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={value >= max}
         type="button"
+        aria-label="Increase"
       >
-        +
+        <Icon name="plus" size={18} />
       </button>
     </div>
   );
@@ -237,7 +249,7 @@ export function Sheet({
               className="flex h-8 w-8 items-center justify-center rounded-full bg-white/8 text-white/70 hover:bg-white/15"
               aria-label="Close"
             >
-              ✕
+              <Icon name="close" size={16} />
             </button>
           </div>
         )}
@@ -268,12 +280,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             className={cx(
-              "panel-tight pointer-events-auto max-w-sm px-4 py-3 text-sm font-semibold shadow-xl animate-rise",
+              "panel-tight pointer-events-auto flex max-w-sm items-center gap-2 px-4 py-3 text-sm font-semibold shadow-xl animate-rise",
               t.tone === "err" ? "text-[var(--color-loss)]" : "text-[var(--color-win)]",
             )}
           >
-            {t.tone === "err" ? "⚠️ " : "✅ "}
-            {t.message}
+            <Icon name={t.tone === "err" ? "warning" : "check"} size={16} className="shrink-0" />
+            <span>{t.message}</span>
           </div>
         ))}
       </div>

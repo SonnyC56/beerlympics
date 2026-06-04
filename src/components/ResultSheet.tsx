@@ -5,8 +5,10 @@ import { useMutation } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { Sheet, TeamBadge, cx, useAction } from "@/components/primitives";
+import { Icon, Mascot, Medal } from "@/components/Icon";
+import { GameArt } from "@/components/gameArt";
 import { colorHex } from "@/lib/teamColors";
-import { ordinal, placeMedal } from "@/lib/format";
+import { ordinal } from "@/lib/format";
 
 export type ResultTeam = {
   _id: Id<"teams">;
@@ -21,12 +23,13 @@ export type ResultMatch = {
   teams: ResultTeam[];
   gameName?: string;
   gameEmoji?: string;
+  gameArt?: string;
   stationName?: string;
 };
 
 /**
  * Result entry. Opened from a player's own in-progress match or by a host from
- * any match on the board. 1v1 → pick the winner. Heats (3+ teams) → tap teams
+ * any match on the board. 1v1 -> pick the winner. Heats (3+ teams) -> tap teams
  * in finishing order to build a ranking, then submit. Errors (e.g. permissions)
  * surface as toasts via reportResult; the sheet stays open so it can be retried.
  */
@@ -67,7 +70,7 @@ export function ResultSheet({
   const submit = (fn: () => Promise<unknown>) => {
     if (!deviceId) return;
     setSubmitting(true);
-    void run(fn, "Result locked in! 🏁").then((ok) => {
+    void run(fn, "Result locked in!").then((ok) => {
       setSubmitting(false);
       if (ok) onClose();
     });
@@ -92,7 +95,11 @@ export function ResultSheet({
       onClose={onClose}
       title={
         <span className="flex items-center gap-2">
-          <span>{match.gameEmoji ?? "🏁"}</span>
+          {match.gameArt ? (
+            <GameArt artKey={match.gameArt} size={20} title={match.gameName ?? "Match"} />
+          ) : (
+            <Icon name="finish" size={20} />
+          )}
           Report Result
         </span>
       }
@@ -101,7 +108,11 @@ export function ResultSheet({
         <div className="text-sm text-white/55">
           {match.gameName && <span className="font-semibold text-white/80">{match.gameName}</span>}
           {match.label && <span> · {match.label}</span>}
-          {match.stationName && <span> · 📍 {match.stationName}</span>}
+          {match.stationName && (
+            <span className="inline-flex items-center gap-1">
+              · <Icon name="pin" size={12} /> {match.stationName}
+            </span>
+          )}
         </div>
 
         {!deviceId && (
@@ -132,20 +143,20 @@ export function ResultSheet({
                   >
                     <span className="flex items-center gap-3">
                       <span
-                        className="flex h-12 w-12 items-center justify-center rounded-2xl text-2xl"
+                        className="flex h-12 w-12 items-center justify-center rounded-2xl"
                         style={{ background: `${hex}26`, border: `1px solid ${hex}66` }}
                       >
-                        {t.emoji}
+                        <Mascot name={t.emoji} size={26} />
                       </span>
                       <span className="font-display text-2xl leading-none text-white">
                         {t.name}
                       </span>
                     </span>
                     <span
-                      className="rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-wider transition group-hover:brightness-110"
+                      className="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-black uppercase tracking-wider transition group-hover:brightness-110"
                       style={{ background: hex, color: "#1a1205" }}
                     >
-                      Winner 🏆
+                      Winner <Icon name="trophy" size={14} />
                     </span>
                   </button>
                 );
@@ -177,8 +188,11 @@ export function ResultSheet({
                     style={{ background: `${hex}1c`, border: `1px solid ${hex}55` }}
                   >
                     <div className="flex items-center gap-3">
-                      <span className="font-display text-2xl tabular-nums" style={{ color: hex }}>
-                        {placeMedal(i + 1) || ordinal(i + 1)}
+                      <span
+                        className="inline-flex items-center font-display text-2xl tabular-nums"
+                        style={{ color: hex }}
+                      >
+                        {i + 1 <= 3 ? <Medal rank={i + 1} size={24} /> : ordinal(i + 1)}
                       </span>
                       <TeamBadge emoji={t.emoji} name={t.name} color={t.color} />
                     </div>
@@ -209,10 +223,10 @@ export function ResultSheet({
                         className="flex items-center gap-2 rounded-2xl border border-white/10 bg-white/4 px-3 py-3 text-left transition hover:bg-white/8 active:scale-[0.98]"
                       >
                         <span
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-lg"
+                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl"
                           style={{ background: `${hex}22`, border: `1px solid ${hex}55` }}
                         >
-                          {t.emoji}
+                          <Mascot name={t.emoji} size={18} />
                         </span>
                         <span className="min-w-0 truncate text-sm font-bold text-white">
                           {t.name}
@@ -229,11 +243,15 @@ export function ResultSheet({
               disabled={!deviceId || submitting || remaining.length > 0}
               onClick={submitHeat}
             >
-              {remaining.length > 0
-                ? `Rank all ${match.teams.length} teams to submit`
-                : submitting
-                  ? "Locking in…"
-                  : "🏁 Submit Results"}
+              {remaining.length > 0 ? (
+                `Rank all ${match.teams.length} teams to submit`
+              ) : submitting ? (
+                "Locking in…"
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name="finish" size={16} /> Submit Results
+                </span>
+              )}
             </button>
           </div>
         )}

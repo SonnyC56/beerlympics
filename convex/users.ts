@@ -2,7 +2,7 @@ import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getActiveEvent, getUserByDevice } from "./lib";
 
-const DEFAULT_EMOJI = "🍺";
+const DEFAULT_EMOJI = "beer"; // mascot key
 
 /** The current user for a device, or null if they haven't set a name yet. */
 export const current = query({

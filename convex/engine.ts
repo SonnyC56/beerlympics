@@ -328,8 +328,7 @@ export async function finalizeInstanceIfComplete(
     const team = await ctx.db.get(champion.teamId);
     await recordActivity(ctx, event._id, {
       kind: "result",
-      message: `🏆 ${team?.emoji ?? ""} ${team?.name ?? "A team"} won ${game.emoji} ${game.name}${phase ? ` (${phase.name})` : ""}! +${champion.points} pts`,
-      emoji: "🏆",
+      message: `${team?.name ?? "A team"} won ${game.name}${phase ? ` (${phase.name})` : ""}! +${champion.points} pts`,
       teamId: champion.teamId,
     });
   }

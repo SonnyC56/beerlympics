@@ -11,6 +11,8 @@ import {
   cx,
   useAction,
 } from "@/components/primitives";
+import { Icon, Mascot } from "@/components/Icon";
+import { GameArt } from "@/components/gameArt";
 import { HostStat, HostSectionTitle, MiniButton, StatusDot } from "./HostKit";
 
 type Seeding = "seed" | "random" | "standings";
@@ -19,6 +21,7 @@ type GameLite = {
   _id: Id<"games">;
   name: string;
   emoji: string;
+  art?: string;
   category: string;
   format: string;
   isGated: boolean;
@@ -56,10 +59,10 @@ export function HostRun() {
 
       {stats && (
         <section className="grid grid-cols-4 gap-2.5">
-          <HostStat emoji="🙋" label="Going" value={stats.going} tone="win" />
-          <HostStat emoji="🤔" label="Maybe" value={stats.maybe} />
-          <HostStat emoji="🚩" label="Teams" value={stats.teams} tone="gold" />
-          <HostStat emoji="🍻" label="Heads" value={stats.headcount} />
+          <HostStat icon="handRaise" label="Going" value={stats.going} tone="win" />
+          <HostStat icon="thinking" label="Maybe" value={stats.maybe} />
+          <HostStat icon="flag" label="Teams" value={stats.teams} tone="gold" />
+          <HostStat icon="beers" label="Heads" value={stats.headcount} />
         </section>
       )}
 
@@ -85,10 +88,10 @@ export function HostRun() {
 
 // ── Status control ────────────────────────────────────────────────────────────
 const STATUS_FLOW = [
-  { value: "draft" as const, emoji: "📝", label: "Draft" },
-  { value: "rsvp" as const, emoji: "✉️", label: "RSVPs" },
-  { value: "live" as const, emoji: "🏁", label: "Live" },
-  { value: "finished" as const, emoji: "🏆", label: "Final" },
+  { value: "draft" as const, icon: "pencil" as const, label: "Draft" },
+  { value: "rsvp" as const, icon: "envelope" as const, label: "RSVPs" },
+  { value: "live" as const, icon: "finish" as const, label: "Live" },
+  { value: "finished" as const, icon: "trophy" as const, label: "Final" },
 ];
 
 function StatusControl({ status }: { status: string }) {
@@ -105,7 +108,7 @@ function StatusControl({ status }: { status: string }) {
 
   return (
     <section className="panel p-5">
-      <HostSectionTitle emoji="🚦" title="Event Status" />
+      <HostSectionTitle icon="traffic" title="Event Status" />
       <div className="grid grid-cols-4 gap-2">
         {STATUS_FLOW.map((s) => {
           const active = status === s.value;
@@ -131,7 +134,7 @@ function StatusControl({ status }: { status: string }) {
                   : "border-white/10 bg-white/4 text-white/55 hover:bg-white/8 disabled:opacity-50",
               )}
             >
-              <span className="text-lg">{s.emoji}</span>
+              <Icon name={s.icon} size={18} />
               {s.label}
             </button>
           );
@@ -156,7 +159,7 @@ function PhaseControl({
 
   return (
     <section className="panel p-5">
-      <HostSectionTitle emoji="🧭" title="Phases" />
+      <HostSectionTitle icon="compass" title="Phases" />
       {phases === undefined ? (
         <Spinner />
       ) : phases.length === 0 ? (
@@ -193,7 +196,11 @@ function PhaseControl({
                   </div>
                   <div className="mt-0.5 flex items-center gap-2 text-[11px] text-white/45">
                     <StatusDot status={p.status} />
-                    {unlocksDie && <span>· unlocks gated games 🎲</span>}
+                    {unlocksDie && (
+                      <span className="flex items-center gap-1">
+                        · unlocks gated games <Icon name="dice" size={14} />
+                      </span>
+                    )}
                   </div>
                 </div>
                 <MiniButton
@@ -210,7 +217,13 @@ function PhaseControl({
                     )
                   }
                 >
-                  {isCurrent ? "Running" : "Start →"}
+                  {isCurrent ? (
+                    "Running"
+                  ) : (
+                    <span className="flex items-center gap-1">
+                      Start <Icon name="arrowRight" size={14} />
+                    </span>
+                  )}
                 </MiniButton>
               </li>
             );
@@ -233,7 +246,7 @@ function DispatchPanel() {
 
   return (
     <section className="panel stadium-grid p-5">
-      <HostSectionTitle emoji="⚡" title="Dispatch" />
+      <HostSectionTitle icon="bolt" title="Dispatch" />
       <p className="mb-3 text-sm text-white/55">
         Seat every ready match at an open station. Run this whenever you open
         stations or build a new bracket.
@@ -246,10 +259,12 @@ function DispatchPanel() {
             const res = await dispatch({ deviceId: identity.deviceId! });
             const n = (res as { started?: number })?.started ?? 0;
             if (!n) throw new Error("Nothing to seat — open stations or generate a bracket.");
-          }, "Matches seated ⚡")
+          }, "Matches seated")
         }
       >
-        ⚡ Dispatch ready matches
+        <span className="flex items-center justify-center gap-2">
+          <Icon name="bolt" size={20} /> Dispatch ready matches
+        </span>
       </button>
     </section>
   );
@@ -280,7 +295,7 @@ function GenerateBrackets({
 
   return (
     <section className="panel p-5">
-      <HostSectionTitle emoji="🏗️" title="Build Brackets" />
+      <HostSectionTitle icon="construction" title="Build Brackets" />
       {games === undefined ? (
         <Spinner />
       ) : games.length === 0 ? (
@@ -305,7 +320,7 @@ function GenerateBrackets({
               >
                 <div className="mb-2.5 flex items-center justify-between gap-2">
                   <div className="flex min-w-0 items-center gap-2">
-                    <span className="text-xl">{g.emoji}</span>
+                    <GameArt artKey={g.art} size={20} />
                     <div className="min-w-0">
                       <div className="truncate font-bold text-white">{g.name}</div>
                       <div className="text-[11px] uppercase tracking-wide text-white/40">
@@ -335,13 +350,16 @@ function GenerateBrackets({
 
                 {gated ? (
                   <div className="space-y-2.5">
-                    <p className="text-xs text-[var(--color-gold-300)]">
-                      🎲 Gated finale — seed it from the live leaderboard when the
-                      gate phase is open
-                      {typeof g.gateFromPhaseIndex === "number"
-                        ? ` (phase ${g.gateFromPhaseIndex + 1})`
-                        : ""}
-                      .
+                    <p className="flex items-start gap-1.5 text-xs text-[var(--color-gold-300)]">
+                      <Icon name="dice" size={14} className="mt-0.5 shrink-0" />
+                      <span>
+                        Gated finale — seed it from the live leaderboard when the
+                        gate phase is open
+                        {typeof g.gateFromPhaseIndex === "number"
+                          ? ` (phase ${g.gateFromPhaseIndex + 1})`
+                          : ""}
+                        .
+                      </span>
                     </p>
                     <div className="flex items-center gap-2">
                       <label className="text-xs font-semibold text-white/60">
@@ -371,11 +389,13 @@ function GenerateBrackets({
                                 gameId: g._id,
                                 topN: n,
                               }),
-                            `${g.name} finale seeded from Top ${n}! 🎲`,
+                            `${g.name} finale seeded from Top ${n}!`,
                           )
                         }
                       >
-                        🎲 Seed finale
+                        <span className="flex items-center justify-center gap-1.5">
+                          <Icon name="dice" size={16} /> Seed finale
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -443,7 +463,13 @@ type BoardStation = {
   _id: Id<"stations">;
   name: string;
   status: "open" | "busy" | "closed";
-  game: { _id: Id<"games">; name: string; emoji: string; category: string } | null;
+  game: {
+    _id: Id<"games">;
+    name: string;
+    emoji: string;
+    category: string;
+    art?: string;
+  } | null;
   match: BoardMatch | null;
 };
 
@@ -459,7 +485,7 @@ function StationBoard({
 
   return (
     <section className="panel p-5">
-      <HostSectionTitle emoji="🎛️" title="Station Board" />
+      <HostSectionTitle icon="sliders" title="Station Board" />
       {board === undefined ? (
         <Spinner />
       ) : board.stations.length === 0 ? (
@@ -475,7 +501,11 @@ function StationBoard({
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="text-lg">{s.game?.emoji ?? "🎯"}</span>
+                  {s.game ? (
+                    <GameArt artKey={s.game.art} size={20} />
+                  ) : (
+                    <Icon name="target" size={18} />
+                  )}
                   <div className="min-w-0">
                     <div className="truncate font-bold text-white">{s.name}</div>
                     <div className="truncate text-[11px] text-white/40">
@@ -554,9 +584,17 @@ function StationBoard({
                     key={m._id}
                     className="flex items-center gap-2 text-sm text-white/70"
                   >
-                    <span>{m.gameEmoji ?? "🎯"}</span>
-                    <span className="truncate">
-                      {m.teams.map((t) => `${t.emoji} ${t.name}`).join("  vs  ")}
+                    <Icon name="games" size={16} className="shrink-0" />
+                    <span className="flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5">
+                      {m.teams.map((t, i) => (
+                        <span key={t._id} className="flex items-center gap-1">
+                          {i > 0 && (
+                            <span className="text-xs text-white/30">vs</span>
+                          )}
+                          <Mascot name={t.emoji} size={14} />
+                          <span className="truncate">{t.name}</span>
+                        </span>
+                      ))}
                     </span>
                   </div>
                 ))}

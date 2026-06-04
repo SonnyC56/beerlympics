@@ -106,8 +106,7 @@ export const create = mutation({
     await ctx.db.patch(player._id, { teamId, role: "captain" });
     await recordActivity(ctx, event._id, {
       kind: "team",
-      message: `${args.emoji} Team "${name}" just entered the arena!`,
-      emoji: args.emoji,
+      message: `Team "${name}" just entered the arena!`,
       teamId,
     });
     return teamId;
@@ -134,8 +133,7 @@ export const join = mutation({
     await ctx.db.patch(player._id, { teamId, role: "member" });
     await recordActivity(ctx, event._id, {
       kind: "team",
-      message: `${player.emoji} ${player.name} joined ${team.emoji} ${team.name}`,
-      emoji: team.emoji,
+      message: `${player.name} joined ${team.name}`,
       teamId,
     });
     return true;

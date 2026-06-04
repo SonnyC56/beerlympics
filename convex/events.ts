@@ -87,7 +87,7 @@ export const create = mutation({
       startTime: args.startTime,
       location: args.location?.trim(),
       locationUrl: args.locationUrl?.trim(),
-      coverEmoji: args.coverEmoji || "🏅",
+      coverEmoji: args.coverEmoji || "medalGold",
       coverColor: args.coverColor || "gold",
       hostCode,
       status: "rsvp",
@@ -99,8 +99,7 @@ export const create = mutation({
     await ctx.db.patch(user._id, { isHost: true });
     await recordActivity(ctx, eventId, {
       kind: "announcement",
-      message: `${user.name} created ${args.name.trim()}! 🎉`,
-      emoji: "🎉",
+      message: `${user.name} created ${args.name.trim()}!`,
     });
     return { eventId, hostCode };
   },
@@ -174,11 +173,10 @@ export const setStatus = mutation({
       kind: "announcement",
       message:
         status === "live"
-          ? "The games are LIVE! Let the Beerlympics begin! 🏁"
+          ? "The games are LIVE! Let the Beerlympics begin!"
           : status === "finished"
-            ? "That's a wrap on Beerlympics! 🏆"
+            ? "That's a wrap on Beerlympics!"
             : `Event status: ${status}`,
-      emoji: status === "live" ? "🏁" : status === "finished" ? "🏆" : "📣",
     });
     return true;
   },

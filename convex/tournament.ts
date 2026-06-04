@@ -322,8 +322,7 @@ export const generate = mutation({
     await ctx.db.patch(game._id, { status: "active" });
     await recordActivity(ctx, event._id, {
       kind: "announcement",
-      message: `${game.emoji} ${game.name} bracket is set — ${ordered.length} teams in!`,
-      emoji: game.emoji,
+      message: `${game.name} bracket is set — ${ordered.length} teams in!`,
     });
 
     // Seat matches immediately if stations are open.
@@ -357,8 +356,7 @@ export const seedFromStandings = mutation({
     await ctx.db.patch(game._id, { status: "active" });
     await recordActivity(ctx, event._id, {
       kind: "announcement",
-      message: `🎲 ${game.name} FINALE seeded from the leaderboard — top ${top.length} only!`,
-      emoji: "🎲",
+      message: `${game.name} FINALE seeded from the leaderboard — top ${top.length} only!`,
     });
     const started = await runDispatch(ctx, event);
     return { teams: top.length, started };
@@ -424,8 +422,7 @@ export const startPhase = mutation({
 
     await recordActivity(ctx, event._id, {
       kind: "phase",
-      message: `📣 ${phase?.name ?? `Phase ${index + 1}`} is underway!`,
-      emoji: "📣",
+      message: `${phase?.name ?? `Phase ${index + 1}`} is underway!`,
     });
     const started = await runDispatch(ctx, event);
     return { started };

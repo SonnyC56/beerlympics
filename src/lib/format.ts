@@ -1,4 +1,32 @@
 /** Date / time / countdown helpers. */
+import type { IconName } from "@/components/Icon";
+
+/** Icon name for a game category (no emoji). */
+export function categoryIcon(c: string): IconName {
+  return c === "lawn" || c === "long" ? "lawn" : "beer";
+}
+
+/** Icon name for an activity-feed entry kind. */
+export function activityIcon(kind: string): IconName {
+  switch (kind) {
+    case "rsvp":
+      return "handRaise";
+    case "team":
+      return "flag";
+    case "result":
+      return "trophy";
+    case "phase":
+      return "megaphone";
+    case "media":
+      return "camera";
+    case "bonus":
+      return "sparkle";
+    case "announcement":
+      return "megaphone";
+    default:
+      return "circuit";
+  }
+}
 
 export function formatEventDate(dateIso: string): string {
   const d = new Date(dateIso + "T00:00:00");
@@ -70,28 +98,8 @@ export function categoryLabel(c: string): string {
   }
 }
 
-export function categoryEmoji(c: string): string {
-  switch (c) {
-    case "drinking":
-    case "beer": // legacy
-      return "🍺";
-    case "lawn":
-    case "long": // legacy
-      return "🌳";
-    default:
-      return "•";
-  }
-}
-
 export function ordinal(n: number): string {
   const s = ["th", "st", "nd", "rd"];
   const v = n % 100;
   return n + (s[(v - 20) % 10] || s[v] || s[0]);
-}
-
-export function placeMedal(place: number | undefined): string {
-  if (place === 1) return "🥇";
-  if (place === 2) return "🥈";
-  if (place === 3) return "🥉";
-  return "";
 }

@@ -45,7 +45,7 @@ export const respond = mutation({
     if (!user) throw new Error("Sign in to RSVP.");
     const now = Date.now();
     const name = args.name.trim() || user.name || "Player";
-    const emoji = args.emoji || user.emoji || "🍺";
+    const emoji = args.emoji || user.emoji || "beer";
     await ctx.db.patch(user._id, { name, emoji, lastSeenAt: now });
 
     const existing = await ctx.db
@@ -87,8 +87,7 @@ export const respond = mutation({
     if (isNewYes) {
       await recordActivity(ctx, event._id, {
         kind: "rsvp",
-        message: `${emoji} ${name} is IN for Beerlympics!`,
-        emoji,
+        message: `${name} is IN for Beerlympics!`,
       });
     }
 

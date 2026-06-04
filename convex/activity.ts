@@ -27,7 +27,7 @@ export const announce = mutation({
     await recordActivity(ctx, event._id, {
       kind: "announcement",
       message: message.trim(),
-      emoji: emoji || "📣",
+      emoji: emoji || undefined,
     });
     return true;
   },

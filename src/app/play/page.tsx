@@ -7,13 +7,14 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useIdentity } from "@/lib/identity";
 import {
-  EmptyState,
   Spinner,
   cx,
   useAction,
   useNow,
 } from "@/components/primitives";
 import { countdownTo } from "@/lib/format";
+import { Icon, type IconName } from "@/components/Icon";
+import { GameArt } from "@/components/gameArt";
 import {
   CircuitBoard,
   VersusRow,
@@ -37,6 +38,7 @@ type GameLite = {
   _id: Id<"games">;
   name: string;
   emoji: string;
+  art?: string;
   isGated: boolean;
   gateFromPhaseIndex?: number;
   enabled?: boolean;
@@ -49,6 +51,7 @@ type MineMatch = {
   teams: { _id: Id<"teams">; name: string; emoji: string; color: string }[];
   gameName?: string;
   gameEmoji?: string;
+  gameArt?: string;
   stationName?: string;
 };
 
@@ -65,16 +68,20 @@ export default function PlayPage() {
   if (event === undefined) return <Spinner label="Loading the Circuit…" />;
   if (event === null) {
     return (
-      <EmptyState
-        emoji="🏟️"
-        title="No games yet"
-        subtitle="The Circuit lights up once an event is created."
-        action={
+      <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+        <div className="animate-float text-white/80">
+          <Icon name="stadium" size={56} />
+        </div>
+        <div className="font-display text-2xl text-white">No games yet</div>
+        <div className="max-w-xs text-sm text-white/55">
+          The Circuit lights up once an event is created.
+        </div>
+        <div className="mt-2">
           <Link href="/" className="btn btn-gold">
             Back home
           </Link>
-        }
-      />
+        </div>
+      </div>
     );
   }
 
@@ -119,11 +126,13 @@ function WaitingState({
   return (
     <div className="space-y-5 py-4">
       <section className="panel stadium-grid relative overflow-hidden p-7 text-center animate-rise">
-        <div className="pointer-events-none absolute -right-6 -top-6 text-[120px] opacity-10">
-          {event.coverEmoji}
+        <div className="pointer-events-none absolute -right-6 -top-6 opacity-10">
+          <Icon name="trophy" size={120} />
         </div>
         <div className="relative">
-          <div className="text-6xl animate-float">{finished ? "🏆" : "🎯"}</div>
+          <div className="flex animate-float justify-center text-medal">
+            <Icon name={finished ? "trophy" : "target"} size={56} />
+          </div>
           <h1 className="mt-3 font-display text-4xl leading-none text-medal">
             {finished ? "The Games Are Done" : "The Circuit Is Warming Up"}
           </h1>
@@ -137,7 +146,7 @@ function WaitingState({
             <div className="mt-6">
               {cd.isPast ? (
                 <div className="inline-flex items-center gap-2 rounded-full bg-[var(--color-gold-500)]/15 px-5 py-3 font-display text-2xl text-[var(--color-gold-400)]">
-                  🍺 It's go time
+                  <Icon name="beer" size={24} /> It's go time
                 </div>
               ) : (
                 <div className="flex items-center justify-center gap-2">
@@ -167,18 +176,18 @@ function WaitingState({
       </section>
 
       <div className="grid grid-cols-2 gap-3">
-        <Link href="/teams" className="btn btn-ghost">
-          👥 Teams
+        <Link href="/teams" className="btn btn-ghost inline-flex items-center justify-center gap-2">
+          <Icon name="teams" size={18} /> Teams
         </Link>
-        <Link href="/scoreboard" className="btn btn-ghost">
-          🏆 Scoreboard
+        <Link href="/scoreboard" className="btn btn-ghost inline-flex items-center justify-center gap-2">
+          <Icon name="trophy" size={18} /> Scoreboard
         </Link>
       </div>
 
       {isHost && !finished && (
         <div className="panel space-y-3 p-5">
           <div className="flex items-center gap-2 text-sm font-bold text-[var(--color-gold-300)]">
-            👑 Host controls
+            <Icon name="crown" size={16} /> Host controls
           </div>
           <p className="text-sm text-white/55">
             Ready to drop the puck? Kick off the first phase to put the event live
@@ -190,14 +199,14 @@ function WaitingState({
             onClick={() =>
               run(
                 () => startPhase({ deviceId: deviceId!, index: 0 }),
-                "Game on — the Circuit is LIVE! ⚡",
+                "Game on — the Circuit is LIVE!",
               )
             }
           >
-            ⚡ Start the Games
+            <Icon name="bolt" size={18} /> Start the Games
           </button>
-          <Link href="/host" className="block text-center text-xs text-white/45 underline">
-            Full host control room →
+          <Link href="/host" className="flex items-center justify-center gap-1 text-center text-xs text-white/45 underline">
+            Full host control room <Icon name="arrowRight" size={12} />
           </Link>
         </div>
       )}
@@ -268,12 +277,12 @@ function LiveCircuit({
               onClick={() =>
                 run(
                   () => dispatch({ deviceId: identity.deviceId! }),
-                  "Dispatched — open stations seated! ⚡",
+                  "Dispatched — open stations seated!",
                 )
               }
               title="Seat ready matches at every open station"
             >
-              ⚡ Dispatch
+              <Icon name="bolt" size={16} /> Dispatch
             </button>
           )}
         </div>
@@ -314,7 +323,14 @@ function LiveCircuit({
                       : "border-white/10 bg-white/4 text-white/45",
                   )}
                 >
-                  {g.emoji} {g.name} {unlocked ? "· UNLOCKED" : "· 🔒 LOCKED"}
+                  <GameArt artKey={g.art} size={16} title={g.name} /> {g.name}{" "}
+                  {unlocked ? (
+                    "· UNLOCKED"
+                  ) : (
+                    <span className="inline-flex items-center gap-1">
+                      · <Icon name="lock" size={12} /> LOCKED
+                    </span>
+                  )}
                 </span>
               );
             })}
@@ -331,7 +347,7 @@ function LiveCircuit({
 
           {/* NOW PLAYING */}
           <section>
-            <SectionHead title="Now Playing" emoji="🔴" count={live?.length} />
+            <SectionHead title="Now Playing" icon="live" count={live?.length} />
             {live && live.length > 0 ? (
               <div className="space-y-3">
                 {live.map((m) => (
@@ -348,7 +364,7 @@ function LiveCircuit({
 
           {/* STATION BOARD */}
           <section>
-            <SectionHead title="Station Board" emoji="🏟️" />
+            <SectionHead title="Station Board" icon="stadium" />
             <CircuitBoard
               stations={board?.stations ?? []}
               upNext={board?.upNext ?? []}
@@ -360,7 +376,7 @@ function LiveCircuit({
                   label: s.match.label,
                   teams: s.match.teams,
                   gameName: s.game?.name,
-                  gameEmoji: s.game?.emoji,
+                  gameArt: s.game?.art,
                   stationName: s.name,
                 });
               }}
@@ -370,15 +386,16 @@ function LiveCircuit({
           {/* Per-game brackets */}
           {shownGames.length > 0 && (
             <section>
-              <SectionHead title="Brackets" emoji="🗺️" />
+              <SectionHead title="Brackets" icon="map" />
               <div className="flex flex-wrap gap-2">
                 {shownGames.map((g) => (
                   <Link
                     key={g._id}
                     href={`/games/${g._id}`}
-                    className="chip hover:border-[var(--color-gold-500)]/55 hover:text-white"
+                    className="chip inline-flex items-center gap-1.5 hover:border-[var(--color-gold-500)]/55 hover:text-white"
                   >
-                    {g.emoji} {g.name} →
+                    <GameArt artKey={g.art} size={16} title={g.name} /> {g.name}{" "}
+                    <Icon name="arrowRight" size={12} />
                   </Link>
                 ))}
               </div>
@@ -405,21 +422,22 @@ function YoureUp({
 
   return (
     <section>
-      <SectionHead title="You're Up" emoji="🎯" />
+      <SectionHead title="You're Up" icon="target" />
       {playing ? (
         <div
           className="panel relative overflow-hidden p-5 animate-pop"
           style={{ boxShadow: "0 0 0 1px rgba(247,183,51,0.45), 0 22px 60px -25px rgba(247,183,51,0.6)" }}
         >
-          <div className="pointer-events-none absolute -right-5 -top-5 text-[100px] leading-none opacity-10">
-            {playing.gameEmoji ?? "🎯"}
+          <div className="pointer-events-none absolute -right-5 -top-5 leading-none opacity-10">
+            <GameArt artKey={playing.gameArt} size={100} title={playing.gameName ?? "Match"} />
           </div>
           <div className="relative">
             <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--color-live)]">
               <span className="live-dot" /> You're playing right now
             </div>
-            <h3 className="mt-2 font-display text-2xl leading-tight text-white">
-              {playing.gameEmoji} {playing.gameName ?? "Your match"}
+            <h3 className="mt-2 flex items-center gap-2 font-display text-2xl leading-tight text-white">
+              <GameArt artKey={playing.gameArt} size={24} title={playing.gameName ?? "Match"} />
+              {playing.gameName ?? "Your match"}
             </h3>
             {playing.stationName && (
               <p className="mt-1 text-sm text-white/60">
@@ -437,12 +455,12 @@ function YoureUp({
                   label: playing.label,
                   teams: playing.teams,
                   gameName: playing.gameName,
-                  gameEmoji: playing.gameEmoji,
+                  gameArt: playing.gameArt,
                   stationName: playing.stationName,
                 })
               }
             >
-              🏁 Report Result
+              <Icon name="finish" size={18} /> Report Result
             </button>
             <div className="mt-2 flex justify-center">
               <MediaCapture variant="chip" matchId={playing._id} label="Add match photo/video" />
@@ -453,7 +471,7 @@ function YoureUp({
         <div className="space-y-2">
           {onDeck.map((m) => (
             <div key={m._id} className="panel-tight flex items-center gap-3 p-4">
-              <span className="text-2xl">{m.gameEmoji ?? "🎯"}</span>
+              <GameArt artKey={m.gameArt} size={24} title={m.gameName ?? "Match"} />
               <div className="min-w-0 flex-1">
                 <div className="font-bold text-white">
                   On deck · {m.gameName ?? "Up next"}
@@ -470,13 +488,17 @@ function YoureUp({
         </div>
       ) : matches.length > 0 ? (
         <div className="panel-tight flex items-center gap-3 p-4 text-sm text-white/60">
-          <span className="text-2xl">⏳</span>
+          <span className="text-white/70">
+            <Icon name="clock" size={24} />
+          </span>
           You've got matches coming up — they'll appear here once your bracket
           slot is ready. Stay loose.
         </div>
       ) : (
         <div className="panel-tight flex items-center gap-3 p-4 text-sm text-white/60">
-          <span className="text-2xl">🍺</span>
+          <span className="text-white/70">
+            <Icon name="beer" size={24} />
+          </span>
           You're not in a match right now. Join a team and the dispatcher will put
           you in the action.
         </div>
@@ -491,7 +513,7 @@ function NowPlayingCard({ match }: { match: LiveMatch }) {
     <div className="panel relative overflow-hidden p-4 animate-rise">
       <div className="mb-3 flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-lg">{match.gameEmoji ?? "🎯"}</span>
+          <GameArt artKey={match.gameArt} size={18} title={match.gameName ?? "Match"} />
           <span className="font-bold text-white/90">{match.gameName ?? "Match"}</span>
           {match.label && (
             <span className="text-[11px] uppercase tracking-widest text-white/35">
@@ -500,7 +522,9 @@ function NowPlayingCard({ match }: { match: LiveMatch }) {
           )}
         </div>
         {match.stationName && (
-          <span className="chip text-white/55">📍 {match.stationName}</span>
+          <span className="chip inline-flex items-center gap-1 text-white/55">
+            <Icon name="pin" size={12} /> {match.stationName}
+          </span>
         )}
       </div>
       <div className="rounded-2xl bg-black/25 p-3">
@@ -516,16 +540,18 @@ function NowPlayingCard({ match }: { match: LiveMatch }) {
 // ── Section header ────────────────────────────────────────────────────────────
 function SectionHead({
   title,
-  emoji,
+  icon,
   count,
 }: {
   title: string;
-  emoji: string;
+  icon: IconName;
   count?: number;
 }) {
   return (
     <div className="mb-3 flex items-center gap-2">
-      <span className="text-xl">{emoji}</span>
+      <span className="text-white/80">
+        <Icon name={icon} size={20} />
+      </span>
       <h2 className="font-display text-2xl text-white">{title}</h2>
       {typeof count === "number" && count > 0 && (
         <span className="chip">{count}</span>

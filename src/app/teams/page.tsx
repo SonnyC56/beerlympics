@@ -14,6 +14,7 @@ import {
 } from "@/components/primitives";
 import { TeamCard, type TeamCardTeam } from "@/components/TeamCard";
 import { ColorPicker, EmojiPicker } from "@/components/EmojiColorPicker";
+import { Icon, Mascot } from "@/components/Icon";
 import { COLOR_TOKENS, colorHex } from "@/lib/teamColors";
 
 export default function TeamsPage() {
@@ -62,17 +63,18 @@ export default function TeamsPage() {
             {teams.length} {teams.length === 1 ? "squad" : "squads"} in the arena
           </p>
         </div>
-        <span className="text-4xl">🚩</span>
+        <Icon name="flag" size={36} className="text-medal" />
       </div>
 
       {/* Create / RSVP CTA */}
       {hasRsvp ? (
         !myTeam ? (
           <button
-            className="btn btn-gold w-full py-4 text-base"
+            className="btn btn-gold flex w-full items-center justify-center gap-2 py-4 text-base"
             onClick={() => setCreateOpen(true)}
           >
-            ➕ Create a team
+            <Icon name="plus" size={16} />
+            Create a team
           </button>
         ) : null
       ) : (
@@ -80,8 +82,12 @@ export default function TeamsPage() {
           <div className="text-sm text-white/70">
             RSVP to create or join a team.
           </div>
-          <Link href="/rsvp" className="btn btn-gold shrink-0 px-4 py-2 text-sm">
-            RSVP →
+          <Link
+            href="/rsvp"
+            className="btn btn-gold flex shrink-0 items-center gap-1.5 px-4 py-2 text-sm"
+          >
+            RSVP
+            <Icon name="arrowRight" size={14} />
           </Link>
         </div>
       )}
@@ -98,14 +104,15 @@ export default function TeamsPage() {
               <>
                 {canEditMine && (
                   <button
-                    className="btn btn-ghost flex-1 px-3 py-2 text-sm"
+                    className="btn btn-ghost flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-sm"
                     onClick={() => setEditTeam(myTeam)}
                   >
-                    ✏️ Edit
+                    <Icon name="edit" size={14} />
+                    Edit
                   </button>
                 )}
                 <button
-                  className="btn btn-ghost flex-1 px-3 py-2 text-sm text-[var(--color-loss)]"
+                  className="btn btn-ghost flex flex-1 items-center justify-center gap-1.5 px-3 py-2 text-sm text-[var(--color-loss)]"
                   onClick={() =>
                     run(
                       () => leave({ deviceId: identity.deviceId! }),
@@ -114,7 +121,8 @@ export default function TeamsPage() {
                   }
                   disabled={!identity.deviceId}
                 >
-                  🚪 Leave team
+                  <Icon name="arrowLeft" size={14} />
+                  Leave team
                 </button>
               </>
             }
@@ -133,7 +141,7 @@ export default function TeamsPage() {
         {teams.length === 0 ? (
           <div className="panel">
             <EmptyState
-              emoji="🚩"
+              icon="flag"
               title="No teams yet"
               subtitle={
                 hasRsvp
@@ -143,14 +151,19 @@ export default function TeamsPage() {
               action={
                 hasRsvp ? (
                   <button
-                    className="btn btn-gold"
+                    className="btn btn-gold flex items-center justify-center gap-2"
                     onClick={() => setCreateOpen(true)}
                   >
-                    ➕ Create the first team
+                    <Icon name="plus" size={16} />
+                    Create the first team
                   </button>
                 ) : (
-                  <Link href="/rsvp" className="btn btn-gold">
-                    🍺 RSVP
+                  <Link
+                    href="/rsvp"
+                    className="btn btn-gold flex items-center justify-center gap-2"
+                  >
+                    <Icon name="beer" size={16} />
+                    RSVP
                   </Link>
                 )
               }
@@ -166,7 +179,7 @@ export default function TeamsPage() {
                   // Only show Join when the user has RSVP'd and has no team.
                   hasRsvp && !myTeam ? (
                     <button
-                      className="btn btn-gold w-full px-3 py-2 text-sm"
+                      className="btn btn-gold flex w-full items-center justify-center gap-2 px-3 py-2 text-sm"
                       onClick={() =>
                         run(
                           () =>
@@ -174,12 +187,13 @@ export default function TeamsPage() {
                               deviceId: identity.deviceId!,
                               teamId: team._id,
                             }),
-                          `Joined ${team.emoji} ${team.name}!`,
+                          `Joined ${team.name}!`,
                         )
                       }
                       disabled={!identity.deviceId}
                     >
-                      ➕ Join this team
+                      <Icon name="plus" size={14} />
+                      Join this team
                     </button>
                   ) : !hasRsvp ? (
                     <Link
@@ -241,7 +255,7 @@ function TeamFormSheet({
   const [theme, setTheme] = useState(team?.theme ?? "");
   const [motto, setMotto] = useState(team?.motto ?? "");
   const [color, setColor] = useState(team?.color ?? COLOR_TOKENS[0]);
-  const [emoji, setEmoji] = useState(team?.emoji ?? "🦁");
+  const [emoji, setEmoji] = useState(team?.emoji ?? "lion");
 
   const valid = name.trim().length > 0;
 
@@ -258,7 +272,7 @@ function TeamFormSheet({
             color,
             emoji,
           }),
-        `${emoji} ${name.trim()} entered the arena!`,
+        `${name.trim()} entered the arena!`,
       );
       if (ok) onClose();
     } else if (team) {
@@ -291,13 +305,13 @@ function TeamFormSheet({
         {/* Live preview */}
         <div className="flex items-center gap-3 rounded-2xl bg-white/4 p-3">
           <span
-            className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl"
+            className="flex h-12 w-12 items-center justify-center rounded-xl"
             style={{
               background: `${colorHex(color)}1f`,
               border: `1px solid ${colorHex(color)}66`,
             }}
           >
-            {emoji}
+            <Mascot name={emoji} size={26} />
           </span>
           <div className="min-w-0">
             <div className="truncate font-display text-xl text-white">
@@ -349,7 +363,7 @@ function TeamFormSheet({
           <ColorPicker value={color} onChange={setColor} />
         </FormField>
 
-        <FormField label={`Team emoji ${emoji}`}>
+        <FormField label="Team mascot">
           <EmojiPicker value={emoji} onChange={setEmoji} />
         </FormField>
 
@@ -358,7 +372,10 @@ function TeamFormSheet({
           disabled={!valid || !identity.deviceId}
           onClick={submit}
         >
-          {mode === "create" ? "🚩 Create team" : "💾 Save changes"}
+          <span className="flex items-center justify-center gap-2">
+            <Icon name={mode === "create" ? "flag" : "save"} size={16} />
+            {mode === "create" ? "Create team" : "Save changes"}
+          </span>
         </button>
       </div>
     </Sheet>

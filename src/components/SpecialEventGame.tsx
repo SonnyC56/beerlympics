@@ -15,8 +15,9 @@ import {
 } from "@/components/primitives";
 import { MediaCapture } from "@/components/MediaCapture";
 import { MediaGrid } from "@/components/MediaGrid";
+import { Icon, Medal } from "@/components/Icon";
 import { colorHex } from "@/lib/teamColors";
-import { placeMedal, timeAgo } from "@/lib/format";
+import { timeAgo } from "@/lib/format";
 
 type TeamLite = { _id: Id<"teams">; name: string; emoji: string; color: string };
 const QUICK = [10, 25, 50, 100];
@@ -53,14 +54,14 @@ export function SpecialEventGame({ game }: { game: { _id: Id<"games">; name: str
   return (
     <div className="space-y-5">
       <div className="panel-tight flex items-center gap-2 p-3 text-sm text-[var(--color-gold-300)]">
-        <span className="text-lg">⏱️</span> Running all day — earn points anytime.
+        <Icon name="clock" size={18} /> Running all day — earn points anytime.
       </div>
 
       {/* Host: award points */}
       {identity.isHost && (
         <section className="panel p-5">
           <div className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--color-gold-300)]">
-            👑 Award points
+            <Icon name="crown" size={16} /> Award points
           </div>
           {teams && teams.length > 0 ? (
             <>
@@ -124,7 +125,9 @@ export function SpecialEventGame({ game }: { game: { _id: Id<"games">; name: str
 
       {/* Leaderboard */}
       <section className="panel p-5">
-        <h2 className="mb-3 font-display text-xl">🏅 {game.name} Leaders</h2>
+        <h2 className="mb-3 flex items-center gap-2 font-display text-xl">
+          <Icon name="medalGold" size={20} /> {game.name} Leaders
+        </h2>
         {standings === undefined ? (
           <Spinner />
         ) : standings.length > 0 ? (
@@ -132,7 +135,9 @@ export function SpecialEventGame({ game }: { game: { _id: Id<"games">; name: str
             {standings.map((t, i) => (
               <div key={t.teamId} className="flex items-center justify-between rounded-2xl bg-white/4 px-4 py-2.5">
                 <div className="flex items-center gap-3">
-                  <span className="w-6 text-center font-display text-lg text-white/50">{placeMedal(i + 1) || i + 1}</span>
+                  <span className="flex w-6 items-center justify-center font-display text-lg text-white/50">
+                    {i + 1 <= 3 ? <Medal rank={i + 1} size={18} /> : <span>{i + 1}</span>}
+                  </span>
                   <TeamBadge emoji={t.emoji} name={t.name} color={t.color} />
                 </div>
                 <span className="font-display text-lg text-[var(--color-gold-400)]">{t.points}</span>
@@ -147,7 +152,9 @@ export function SpecialEventGame({ game }: { game: { _id: Id<"games">; name: str
       {/* Recent awards */}
       {recent && recent.length > 0 && (
         <section className="panel p-5">
-          <h2 className="mb-3 font-display text-xl">📣 Recent</h2>
+          <h2 className="mb-3 flex items-center gap-2 font-display text-xl">
+            <Icon name="megaphone" size={20} /> Recent
+          </h2>
           <ul className="space-y-2">
             {recent.map((r) => (
               <li key={r._id} className="flex items-center justify-between gap-2 text-sm">
@@ -168,7 +175,9 @@ export function SpecialEventGame({ game }: { game: { _id: Id<"games">; name: str
       {/* Media for this event */}
       <section className="panel p-5">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-xl">📸 {game.name} Moments</h2>
+          <h2 className="flex items-center gap-2 font-display text-xl">
+            <Icon name="camera" size={20} /> {game.name} Moments
+          </h2>
           <MediaCapture variant="chip" gameId={game._id} label="Add" />
         </div>
         {media && media.length > 0 ? (

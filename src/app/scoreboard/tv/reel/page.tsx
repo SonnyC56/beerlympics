@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { colorHex } from "@/lib/teamColors";
-import { formatClock, placeMedal } from "@/lib/format";
+import { Icon, Medal, Mascot } from "@/components/Icon";
+import { formatClock } from "@/lib/format";
 
 type Item = {
   _id: string;
@@ -41,7 +42,9 @@ export default function PhotoReelTV() {
 
   const teams = standings?.teams ?? [];
   const crawl = teams.slice(0, 10).map((t) => ({
-    label: `${placeMedal(t.rank) || `#${t.rank}`} ${t.emoji} ${t.name}`,
+    rank: t.rank,
+    emoji: t.emoji,
+    name: t.name,
     total: t.total,
     color: t.color,
   }));
@@ -51,7 +54,7 @@ export default function PhotoReelTV() {
       {/* Header */}
       <div className="absolute inset-x-0 top-0 z-20 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent px-8 py-5">
         <div className="flex items-center gap-3">
-          <span className="text-3xl">{event?.coverEmoji ?? "🏅"}</span>
+          <Mascot name={event?.coverEmoji ?? "trophy"} size={30} />
           <div className="font-display text-3xl tracking-wide text-white">
             {event?.name ?? "Beerlympics"}
           </div>
@@ -65,7 +68,9 @@ export default function PhotoReelTV() {
       <div className="absolute inset-0 flex items-center justify-center">
         {!current ? (
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="text-7xl animate-float">📸</div>
+            <div className="animate-float">
+              <Icon name="camera" size={72} />
+            </div>
             <div className="font-display text-4xl text-medal">The reel starts when you do</div>
             <div className="text-lg text-white/50">Snap photos & videos in the app — they appear here live.</div>
           </div>
@@ -99,8 +104,10 @@ export default function PhotoReelTV() {
             {current.caption && (
               <div className="font-display text-3xl leading-tight text-white">{current.caption}</div>
             )}
-            <div className="mt-1 text-base text-white/60">
-              {current.uploaderName ? `📸 ${current.uploaderName}` : "📸"} · {formatClock(current.takenAt)}
+            <div className="mt-1 inline-flex items-center gap-1.5 text-base text-white/60">
+              <Icon name="camera" size={16} />
+              {current.uploaderName ? `${current.uploaderName} · ` : "· "}
+              {formatClock(current.takenAt)}
             </div>
           </div>
         </div>
@@ -112,13 +119,24 @@ export default function PhotoReelTV() {
           <div className="flex w-max animate-marquee gap-10 whitespace-nowrap pl-10">
             {[...crawl, ...crawl].map((c, i) => (
               <span key={i} className="flex items-center gap-2 font-display text-2xl">
-                <span className="text-white">{c.label}</span>
+                <span className="flex items-center gap-2 text-white">
+                  {c.rank <= 3 ? (
+                    <Medal rank={c.rank} size={24} />
+                  ) : (
+                    <span>#{c.rank}</span>
+                  )}
+                  <Mascot name={c.emoji} size={22} />
+                  {c.name}
+                </span>
                 <span style={{ color: colorHex(c.color) }}>{c.total}</span>
               </span>
             ))}
           </div>
         ) : (
-          <div className="px-10 font-display text-2xl text-white/40">Beerlympics — let the games begin 🍺</div>
+          <div className="flex items-center gap-2 px-10 font-display text-2xl text-white/40">
+            Beerlympics — let the games begin
+            <Icon name="beer" size={22} />
+          </div>
         )}
       </div>
     </div>

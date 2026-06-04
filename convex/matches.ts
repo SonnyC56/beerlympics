@@ -271,7 +271,7 @@ export const board = query({
         return {
           ...s,
           game: game
-            ? { _id: game._id, name: game.name, emoji: game.emoji, category: game.category }
+            ? { _id: game._id, name: game.name, emoji: game.emoji, category: game.category, art: game.art }
             : null,
           match: match ? await enrichMatch(ctx, match) : null,
         };

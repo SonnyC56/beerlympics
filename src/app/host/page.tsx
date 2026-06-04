@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useIdentity } from "@/lib/identity";
 import { Spinner, cx, useAction } from "@/components/primitives";
+import { Icon, type IconName } from "@/components/Icon";
 import { HostRun } from "./HostRun";
 import { HostGames } from "./HostGames";
 import { HostTeams } from "./HostTeams";
@@ -12,13 +13,13 @@ import { HostSettings } from "./HostSettings";
 
 type Tab = "run" | "games" | "teams" | "invites" | "scoring" | "settings";
 
-const TABS: { value: Tab; label: string; emoji: string }[] = [
-  { value: "run", label: "Run", emoji: "🎛️" },
-  { value: "games", label: "Games", emoji: "🎮" },
-  { value: "teams", label: "Teams", emoji: "🚩" },
-  { value: "invites", label: "Invites", emoji: "✉️" },
-  { value: "scoring", label: "Score", emoji: "🎯" },
-  { value: "settings", label: "Setup", emoji: "⚙️" },
+const TABS: { value: Tab; label: string; icon: IconName }[] = [
+  { value: "run", label: "Run", icon: "sliders" },
+  { value: "games", label: "Games", icon: "games" },
+  { value: "teams", label: "Teams", icon: "flag" },
+  { value: "invites", label: "Invites", icon: "envelope" },
+  { value: "scoring", label: "Score", icon: "target" },
+  { value: "settings", label: "Setup", icon: "gear" },
 ];
 
 export default function HostPage() {
@@ -60,7 +61,7 @@ export default function HostPage() {
                     : "text-white/55 hover:text-white",
                 )}
               >
-                <span>{t.emoji}</span>
+                <Icon name={t.icon} size={16} />
                 {t.label}
               </button>
             );
@@ -90,7 +91,9 @@ function HostGate() {
   return (
     <div className="flex min-h-[60dvh] items-center justify-center py-8">
       <div className="panel stadium-grid w-full max-w-sm p-6 text-center animate-rise">
-        <div className="text-5xl animate-float">🔐</div>
+        <div className="flex justify-center text-[var(--color-gold-300)] animate-float">
+          <Icon name="lock" size={48} />
+        </div>
         <h1 className="mt-3 font-display text-2xl text-white">Host Only</h1>
         <p className="mt-2 text-sm text-white/55">
           This is the control center for game day. Enter the host code to unlock
@@ -108,7 +111,7 @@ function HostGate() {
             onChange={(e) => setCode(e.target.value.toUpperCase())}
             onKeyDown={(e) => {
               if (e.key === "Enter" && code.trim()) {
-                run(() => identity.claimHost(code.trim()), "Host unlocked! ⚙️");
+                run(() => identity.claimHost(code.trim()), "Host unlocked!");
               }
             }}
             maxLength={12}
@@ -117,7 +120,7 @@ function HostGate() {
             className="btn btn-gold w-full"
             disabled={!identity.deviceId || !code.trim()}
             onClick={() =>
-              run(() => identity.claimHost(code.trim()), "Host unlocked! ⚙️")
+              run(() => identity.claimHost(code.trim()), "Host unlocked!")
             }
           >
             Unlock controls

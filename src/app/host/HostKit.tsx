@@ -2,6 +2,7 @@
 
 import { type ReactNode } from "react";
 import { cx } from "@/components/primitives";
+import { Icon, type IconName } from "@/components/Icon";
 
 /** A labeled form field used across the host dashboard. */
 export function HostField({
@@ -27,17 +28,20 @@ export function HostField({
 /** Section header with an optional action on the right. */
 export function HostSectionTitle({
   emoji,
+  icon,
   title,
   action,
 }: {
+  /** @deprecated use `icon` — emoji are no longer rendered. */
   emoji?: string;
+  icon?: IconName;
   title: string;
   action?: ReactNode;
 }) {
   return (
     <div className="mb-3 flex items-center justify-between gap-3">
-      <h2 className="font-display text-xl text-white">
-        {emoji && <span className="mr-1.5">{emoji}</span>}
+      <h2 className="flex items-center gap-1.5 font-display text-xl text-white">
+        {icon && <Icon name={icon} size={20} />}
         {title}
       </h2>
       {action}
@@ -50,11 +54,14 @@ export function HostStat({
   label,
   value,
   emoji,
+  icon,
   tone,
 }: {
   label: string;
   value: number | string;
-  emoji: string;
+  /** @deprecated use `icon` — emoji are no longer rendered. */
+  emoji?: string;
+  icon?: IconName;
   tone?: "gold" | "live" | "win";
 }) {
   const color =
@@ -67,7 +74,7 @@ export function HostStat({
           : "text-white";
   return (
     <div className="panel-tight flex flex-col items-center px-2 py-3">
-      <div className="text-base">{emoji}</div>
+      {icon && <Icon name={icon} size={16} className="text-white/70" />}
       <div className={cx("font-display text-2xl tabular-nums", color)}>{value}</div>
       <div className="text-center text-[10px] uppercase tracking-widest text-white/40">
         {label}

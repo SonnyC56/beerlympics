@@ -22,11 +22,12 @@ import {
   type BracketMatch,
 } from "@/components/BracketView";
 import { GameArt } from "@/components/gameArt";
+import { Icon, Medal } from "@/components/Icon";
 import { WheelGame } from "@/components/WheelGame";
 import { SpecialEventGame } from "@/components/SpecialEventGame";
 import { MediaCapture } from "@/components/MediaCapture";
 import { MediaGrid } from "@/components/MediaGrid";
-import { categoryLabel, categoryEmoji, placeMedal, ordinal } from "@/lib/format";
+import { categoryLabel, categoryIcon, ordinal } from "@/lib/format";
 
 type GameDoc = {
   _id: Id<"games">;
@@ -85,7 +86,7 @@ export default function GameBracketPage() {
       <div className="space-y-4 py-6">
         <BackLink />
         <EmptyState
-          emoji="🤷"
+          icon="shrug"
           title="Game not found"
           subtitle="This game may have been removed. Head back to the circuit."
           action={
@@ -138,7 +139,9 @@ function GameMedia({ gameId }: { gameId: Id<"games"> }) {
   return (
     <section className="panel p-5">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-xl">📸 Moments</h2>
+        <h2 className="flex items-center gap-2 font-display text-xl">
+          <Icon name="camera" size={20} /> Moments
+        </h2>
         <MediaCapture variant="chip" gameId={gameId} label="Add" />
       </div>
       {media === undefined ? null : media.length > 0 ? (
@@ -157,7 +160,7 @@ function BackLink() {
       href="/play"
       className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/55 transition hover:text-white"
     >
-      <span className="text-base">←</span> Circuit
+      <Icon name="arrowLeft" size={16} /> Circuit
     </Link>
   );
 }
@@ -169,7 +172,7 @@ function GameHeader({ game }: { game: GameDoc }) {
     { label: string; tone: string }
   > = {
     scheduled: { label: "Scheduled", tone: "text-white/55" },
-    active: { label: "● Live", tone: "text-[var(--color-live)]" },
+    active: { label: "Live", tone: "text-[var(--color-live)]" },
     completed: { label: "Completed", tone: "text-[var(--color-win)]" },
     locked: { label: "Locked", tone: "text-white/40" },
   };
@@ -177,8 +180,8 @@ function GameHeader({ game }: { game: GameDoc }) {
 
   return (
     <section className="panel stadium-grid relative overflow-hidden p-6">
-      <div className="pointer-events-none absolute -right-6 -top-8 text-[110px] opacity-10">
-        {game.emoji}
+      <div className="pointer-events-none absolute -right-6 -top-8 opacity-10">
+        <GameArt artKey={game.art} size={110} title={game.name} />
       </div>
       <div className="relative">
         <div className="flex items-start gap-4">
@@ -187,7 +190,8 @@ function GameHeader({ game }: { game: GameDoc }) {
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
-              <span className={cx("text-xs font-bold uppercase tracking-widest", sm.tone)}>
+              <span className={cx("inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest", sm.tone)}>
+                {game.status === "active" && <span className="live-dot" />}
                 {sm.label}
               </span>
             </div>
@@ -198,16 +202,20 @@ function GameHeader({ game }: { game: GameDoc }) {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="chip">
-            {categoryEmoji(game.category)} {categoryLabel(game.category)}
+          <span className="chip inline-flex items-center gap-1.5">
+            <Icon name={categoryIcon(game.category)} size={14} /> {categoryLabel(game.category)}
           </span>
-          <span className="chip">🗺️ {FORMAT_LABEL[game.format]}</span>
+          <span className="chip inline-flex items-center gap-1.5">
+            <Icon name="map" size={14} /> {FORMAT_LABEL[game.format]}
+          </span>
           {game.pointsMultiplier !== 1 && (
-            <span className="chip text-[var(--color-gold-300)]">
-              ✖️ {game.pointsMultiplier}× points
+            <span className="chip inline-flex items-center gap-1.5 text-[var(--color-gold-300)]">
+              <Icon name="close" size={14} /> {game.pointsMultiplier}× points
             </span>
           )}
-          <span className="chip">⏱️ ~{game.estMinutes} min</span>
+          <span className="chip inline-flex items-center gap-1.5">
+            <Icon name="clock" size={14} /> ~{game.estMinutes} min
+          </span>
         </div>
 
         {game.description && (
@@ -216,7 +224,7 @@ function GameHeader({ game }: { game: GameDoc }) {
 
         {game.isGated && (
           <div className="mt-4 flex items-start gap-2 rounded-2xl border border-[var(--color-grape)]/30 bg-[var(--color-grape)]/10 px-3.5 py-3 text-sm">
-            <span className="text-base">🔒</span>
+            <Icon name="lock" size={16} className="mt-0.5 shrink-0" />
             <span className="text-white/75">
               This is a gated finale
               {typeof game.gateFromPhaseIndex === "number"
@@ -229,9 +237,13 @@ function GameHeader({ game }: { game: GameDoc }) {
 
         {game.rules && (
           <details className="group mt-3">
-            <summary className="cursor-pointer list-none text-sm font-semibold text-[var(--color-gold-400)]">
-              📖 Rules <span className="text-white/40 group-open:hidden">▾</span>
-              <span className="hidden text-white/40 group-open:inline">▴</span>
+            <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-[var(--color-gold-400)]">
+              <Icon name="book" size={16} /> Rules
+              <Icon
+                name="chevronDown"
+                size={14}
+                className="text-white/40 transition-transform group-open:rotate-180"
+              />
             </summary>
             <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-white/65">
               {game.rules}
@@ -247,18 +259,23 @@ function GameHeader({ game }: { game: GameDoc }) {
 function MiniLeaderboard({ standings }: { standings: GameStanding[] }) {
   return (
     <section className="panel p-5">
-      <h2 className="mb-3 font-display text-xl">🏅 Game Standings</h2>
+      <h2 className="mb-3 flex items-center gap-2 font-display text-xl">
+        <Icon name="medalGold" size={20} /> Game Standings
+      </h2>
       <div className="space-y-2">
         {standings.map((t, i) => {
-          const medal = placeMedal(t.place);
           return (
             <div
               key={t.teamId}
               className="flex items-center justify-between rounded-2xl bg-white/[0.04] px-4 py-2.5"
             >
               <div className="flex min-w-0 items-center gap-3">
-                <span className="w-7 shrink-0 text-center font-display text-lg text-white/50">
-                  {medal || (t.place ? ordinal(t.place) : `#${i + 1}`)}
+                <span className="flex w-7 shrink-0 items-center justify-center font-display text-lg text-white/50">
+                  {t.place && t.place <= 3 ? (
+                    <Medal rank={t.place} size={18} />
+                  ) : (
+                    <span>{t.place ? ordinal(t.place) : `#${i + 1}`}</span>
+                  )}
                 </span>
                 <TeamBadge emoji={t.emoji} name={t.name} color={t.color} />
               </div>
@@ -289,7 +306,7 @@ function BracketSection({
     return (
       <section className="panel p-2">
         <EmptyState
-          emoji="🎲"
+          icon="dice"
           title="No bracket yet"
           subtitle={
             game.isGated
@@ -304,8 +321,16 @@ function BracketSection({
   return (
     <section className="panel p-5">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="font-display text-xl">
-          {game.format === "single_elim" ? "🏆 The Bracket" : "📋 The Matches"}
+        <h2 className="flex items-center gap-2 font-display text-xl">
+          {game.format === "single_elim" ? (
+            <>
+              <Icon name="trophy" size={20} /> The Bracket
+            </>
+          ) : (
+            <>
+              <Icon name="list" size={20} /> The Matches
+            </>
+          )}
         </h2>
         <span className="text-xs text-white/40">
           {matches.length} {matches.length === 1 ? "match" : "matches"}
@@ -317,8 +342,9 @@ function BracketSection({
             matches={matches}
             stationNameFor={stationNameFor}
           />
-          <p className="mt-3 text-center text-[11px] text-white/30 sm:hidden">
-            ← swipe to see later rounds →
+          <p className="mt-3 flex items-center justify-center gap-1 text-center text-[11px] text-white/30 sm:hidden">
+            <Icon name="arrowLeft" size={12} /> swipe to see later rounds{" "}
+            <Icon name="arrowRight" size={12} />
           </p>
         </>
       ) : (
@@ -368,7 +394,7 @@ function HostControls({
     setBusy(true);
     const ok = await run(
       () => generate({ deviceId, gameId: game._id, seeding }),
-      `${game.emoji} ${game.name} bracket generated!`,
+      `${game.name} bracket generated!`,
     );
     setBusy(false);
     if (ok) setGenOpen(false);
@@ -390,7 +416,7 @@ function HostControls({
     setBusy(true);
     const ok = await run(
       () => seedFromStandings({ deviceId, gameId: game._id, topN }),
-      `🎲 Finale seeded from the Top ${topN}!`,
+      `Finale seeded from the Top ${topN}!`,
     );
     setBusy(false);
     if (ok) setFinaleOpen(false);
@@ -400,35 +426,43 @@ function HostControls({
     <>
       <section className="panel-tight p-4">
         <div className="mb-3 flex items-center gap-2 text-sm font-bold text-[var(--color-gold-300)]">
-          👑 Host controls
+          <Icon name="crown" size={16} /> Host controls
         </div>
         <div className="flex flex-wrap gap-2">
           <button
-            className="btn btn-gold flex-1 whitespace-nowrap"
+            className="btn btn-gold flex-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
             disabled={!deviceId}
             onClick={() => {
               setSeeding("seed");
               setGenOpen(true);
             }}
           >
-            {hasMatches ? "🔁 Regenerate" : "⚡ Generate bracket"}
+            {hasMatches ? (
+              <>
+                <Icon name="refresh" size={16} /> Regenerate
+              </>
+            ) : (
+              <>
+                <Icon name="bolt" size={16} /> Generate bracket
+              </>
+            )}
           </button>
           {game.isGated && (
             <button
-              className="btn btn-flame flex-1 whitespace-nowrap"
+              className="btn btn-flame flex-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
               disabled={!deviceId}
               onClick={() => setFinaleOpen(true)}
             >
-              🎲 Seed finale
+              <Icon name="dice" size={16} /> Seed finale
             </button>
           )}
           {hasMatches && (
             <button
-              className="btn btn-ghost whitespace-nowrap"
+              className="btn btn-ghost inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
               disabled={!deviceId}
               onClick={() => setResetOpen(true)}
             >
-              🗑️ Reset
+              <Icon name="trash" size={16} /> Reset
             </button>
           )}
         </div>
@@ -443,7 +477,7 @@ function HostControls({
         <div className="space-y-5">
           {hasMatches && (
             <div className="flex items-start gap-2 rounded-2xl border border-[var(--color-loss)]/30 bg-[var(--color-loss)]/10 px-3.5 py-3 text-sm text-white/80">
-              <span>⚠️</span>
+              <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
               <span>
                 This wipes the current bracket and any points earned in this
                 game's phase, then builds a fresh draw.
@@ -479,12 +513,16 @@ function HostControls({
       <Sheet
         open={finaleOpen}
         onClose={() => !busy && setFinaleOpen(false)}
-        title="🎲 Seed the finale"
+        title={
+          <span className="inline-flex items-center gap-2">
+            <Icon name="dice" size={22} /> Seed the finale
+          </span>
+        }
       >
         <div className="space-y-5">
           <p className="text-sm text-white/65">
             Pull the strongest teams off the live leaderboard into a
-            single-elimination finale for {game.emoji} {game.name}.
+            single-elimination finale for {game.name}.
           </p>
           <div>
             <label className="mb-2 block text-sm font-semibold text-white/70">
@@ -518,9 +556,9 @@ function HostControls({
       >
         <div className="space-y-5">
           <div className="flex items-start gap-2 rounded-2xl border border-[var(--color-loss)]/30 bg-[var(--color-loss)]/10 px-3.5 py-3 text-sm text-white/80">
-            <span>⚠️</span>
+            <Icon name="warning" size={16} className="mt-0.5 shrink-0" />
             <span>
-              This deletes every match for {game.emoji}{" "}
+              This deletes every match for{" "}
               <span className="font-bold">{game.name}</span> across all phases,
               frees its stations, and removes all points it awarded. This can't
               be undone.

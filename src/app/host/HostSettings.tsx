@@ -1,12 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useIdentity } from "@/lib/identity";
 import { Spinner, cx, useAction } from "@/components/primitives";
 import { EmojiPicker, ColorPicker } from "@/components/EmojiColorPicker";
-import { HostField, HostSectionTitle } from "./HostKit";
+import { Icon } from "@/components/Icon";
+import type { IconName } from "@/components/Icon";
+import { HostField } from "./HostKit";
+
+/** Section header with a leading SVG icon (emoji-free). */
+function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-1.5 font-display text-xl text-white">
+        <span className="inline-flex shrink-0">{icon}</span>
+        {title}
+      </h2>
+    </div>
+  );
+}
 
 type EventDoc = {
   name: string;
@@ -73,7 +87,7 @@ function EventDetails({ event }: { event: EventDoc }) {
 
   return (
     <section className="panel p-5">
-      <HostSectionTitle emoji="🏟️" title="Event Details" />
+      <SectionTitle icon={<Icon name="stadium" size={20} />} title="Event Details" />
       <div className="space-y-3.5">
         <HostField label="Name">
           <input
@@ -134,7 +148,7 @@ function EventDetails({ event }: { event: EventDoc }) {
           />
         </HostField>
 
-        <HostField label={`Cover emoji ${coverEmoji}`}>
+        <HostField label="Cover mascot">
           <EmojiPicker value={coverEmoji} onChange={setCoverEmoji} />
         </HostField>
         <HostField label="Cover color">
@@ -179,7 +193,7 @@ function ScoringSettings({ event }: { event: EventDoc }) {
   const updateSettings = useMutation(api.events.updateSettings);
 
   const s = event.settings;
-  // Read with legacy fallbacks (beer→drinking, long→lawn) for pre-migration events.
+  // Read with legacy fallbacks (beer to drinking, long to lawn) for pre-migration events.
   const cm = s.categoryMultipliers;
   const [drinking, setDrinking] = useState(String(cm.drinking ?? cm.beer ?? 1));
   const [lawn, setLawn] = useState(String(cm.lawn ?? cm.long ?? 1.5));
@@ -207,17 +221,17 @@ function ScoringSettings({ event }: { event: EventDoc }) {
 
   return (
     <section className="panel p-5">
-      <HostSectionTitle emoji="⚖️" title="Scoring Rules" />
+      <SectionTitle icon={<Icon name="scale" size={20} />} title="Scoring Rules" />
       <div className="space-y-4">
         <HostField label="Category multipliers" hint="weight each game type">
           <div className="grid grid-cols-2 gap-3">
-            {[
-              { l: "🍺 Drinking", v: drinking, set: setDrinking },
-              { l: "🌳 Lawn", v: lawn, set: setLawn },
-            ].map((m) => (
+            {([
+              { l: "Drinking", icon: "beer" as IconName, v: drinking, set: setDrinking },
+              { l: "Lawn", icon: "lawn" as IconName, v: lawn, set: setLawn },
+            ]).map((m) => (
               <div key={m.l}>
-                <div className="mb-1 text-center text-[11px] text-white/50">
-                  {m.l}
+                <div className="mb-1 flex items-center justify-center gap-1 text-[11px] text-white/50">
+                  <Icon name={m.icon} size={12} /> {m.l}
                 </div>
                 <input
                   type="number"
@@ -234,7 +248,7 @@ function ScoringSettings({ event }: { event: EventDoc }) {
 
         <HostField
           label="Default placement points"
-          hint="comma list, best → worst"
+          hint="comma list, best to worst"
         >
           <input
             className={cx("field", !placementValid && "border-[var(--color-loss)]")}
@@ -261,7 +275,9 @@ function ScoringSettings({ event }: { event: EventDoc }) {
 
         <label className="flex items-center justify-between gap-3 rounded-2xl border border-white/8 bg-white/4 px-4 py-3">
           <div>
-            <div className="font-bold text-white">🙋 Player self-scoring</div>
+            <div className="flex items-center gap-1.5 font-bold text-white">
+              <Icon name="handRaise" size={16} /> Player self-scoring
+            </div>
             <div className="text-xs text-white/45">
               Let players report results for their own matches.
             </div>

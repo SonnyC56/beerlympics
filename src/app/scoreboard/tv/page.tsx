@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { cx, useNow } from "@/components/primitives";
+import { Icon, Medal, Mascot } from "@/components/Icon";
+import { GameArt } from "@/components/gameArt";
 import { colorHex } from "@/lib/teamColors";
 import type { StandingTeam } from "@/components/Leaderboard";
-import { formatClock, placeMedal } from "@/lib/format";
+import { formatClock } from "@/lib/format";
 
 type Phase = {
   _id: string;
@@ -22,6 +24,7 @@ type LiveMatch = {
   teams: { _id: string; name: string; emoji: string; color: string }[];
   gameName?: string;
   gameEmoji?: string;
+  gameArt?: string;
   stationName?: string;
 };
 
@@ -52,25 +55,35 @@ export default function ScoreboardTvPage() {
         aria-hidden
       />
 
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <header className="relative flex items-center justify-between gap-6 px-[3vw] pt-[3vh]">
         <div className="flex items-center gap-4">
-          <span className="text-[7vh] leading-none">{event?.coverEmoji ?? "🏅"}</span>
+          <Mascot
+            name={event?.coverEmoji ?? "trophy"}
+            size={64}
+            className="h-[7vh] w-[7vh]"
+          />
           <div>
             <h1 className="font-display text-[6vh] leading-[0.95] text-medal">
               {event?.name ?? "Beerlympics"}
             </h1>
             <div className="mt-1 flex items-center gap-3 text-[2.1vh] font-bold uppercase tracking-[0.2em]">
               {finished ? (
-                <span className="text-[var(--color-gold-300)]">🏆 Final Standings</span>
+                <span className="inline-flex items-center gap-2 text-[var(--color-gold-300)]">
+                  <Icon name="trophy" size={20} /> Final Standings
+                </span>
               ) : (
                 <span className="inline-flex items-center gap-2 text-[var(--color-live)]">
                   <span className="live-dot" /> Live
                 </span>
               )}
               {currentPhase && (
-                <span className="text-white/55">
-                  {currentPhase.kind === "final" ? "🏁 " : "› "}
+                <span className="inline-flex items-center gap-2 text-white/55">
+                  {currentPhase.kind === "final" ? (
+                    <Icon name="finish" size={20} />
+                  ) : (
+                    <Icon name="arrowRight" size={20} />
+                  )}
                   {currentPhase.name}
                 </span>
               )}
@@ -83,14 +96,14 @@ export default function ScoreboardTvPage() {
           </div>
           <Link
             href="/scoreboard"
-            className="mt-2 inline-block text-[1.7vh] font-semibold uppercase tracking-widest text-white/35 transition hover:text-white/70"
+            className="mt-2 inline-flex items-center gap-1.5 text-[1.7vh] font-semibold uppercase tracking-widest text-white/35 transition hover:text-white/70"
           >
-            ← Exit TV mode
+            <Icon name="arrowLeft" size={16} /> Exit TV mode
           </Link>
         </div>
       </header>
 
-      {/* ── Leaderboard ── */}
+      {/* -- Leaderboard -- */}
       <main className="relative flex flex-1 flex-col justify-center px-[3vw] py-[2vh]">
         {teams.length > 0 ? (
           <ol className="flex flex-col gap-[1.2vh]">
@@ -100,7 +113,9 @@ export default function ScoreboardTvPage() {
           </ol>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
-            <div className="text-[12vh] animate-float">🍺</div>
+            <div className="animate-float">
+              <Icon name="beer" size={96} className="h-[12vh] w-[12vh]" />
+            </div>
             <div className="font-display text-[5vh] text-white/70">
               Waiting for the first points
             </div>
@@ -111,7 +126,7 @@ export default function ScoreboardTvPage() {
         )}
       </main>
 
-      {/* ── Now-playing marquee ── */}
+      {/* -- Now-playing marquee -- */}
       <NowPlaying matches={(live as LiveMatch[] | undefined) ?? undefined} />
     </div>
   );
@@ -127,7 +142,6 @@ function TvRow({
   index: number;
 }) {
   const hex = colorHex(team.color);
-  const medal = placeMedal(team.rank);
   const pct =
     leader <= 0
       ? team.total > 0
@@ -143,8 +157,8 @@ function TvRow({
     >
       {/* Rank */}
       <div className="flex w-[7vh] shrink-0 items-center justify-center">
-        {medal ? (
-          <span className="text-[5.5vh] leading-none">{medal}</span>
+        {team.rank <= 3 ? (
+          <Medal rank={team.rank} size={48} className="h-[5.5vh] w-[5.5vh]" />
         ) : (
           <span className="font-display text-[4.5vh] tabular-nums leading-none text-white/30">
             {team.rank}
@@ -156,7 +170,7 @@ function TvRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="text-[4vh] leading-none">{team.emoji}</span>
+            <Mascot name={team.emoji} size={36} className="h-[4vh] w-[4vh] shrink-0" />
             <span
               className={cx(
                 "min-w-0 truncate font-display tracking-wide",
@@ -216,8 +230,9 @@ function NowPlaying({ matches }: { matches: LiveMatch[] | undefined }) {
               ))}
             </div>
           ) : (
-            <div className="flex h-full items-center py-[2vh] pl-[3vw] text-[2.4vh] text-white/40">
-              No matches on the field right now — next round loading up. 🍻
+            <div className="flex h-full items-center gap-2 py-[2vh] pl-[3vw] text-[2.4vh] text-white/40">
+              No matches on the field right now — next round loading up.
+              <Icon name="beers" size={22} />
             </div>
           )}
         </div>
@@ -229,18 +244,20 @@ function NowPlaying({ matches }: { matches: LiveMatch[] | undefined }) {
 function NowPlayingItem({ match }: { match: LiveMatch }) {
   return (
     <span className="inline-flex items-center gap-[1.4vw] text-[2.6vh]">
-      <span className="font-bold text-white/85">
-        {match.gameEmoji ?? "🎯"} {match.gameName ?? "Match"}
+      <span className="inline-flex items-center gap-[0.6vw] font-bold text-white/85">
+        <GameArt artKey={match.gameArt} size={26} />
+        {match.gameName ?? "Match"}
       </span>
       <span className="flex items-center gap-[0.8vw]">
         {match.teams.map((t, idx) => (
           <span key={t._id} className="flex items-center gap-[0.8vw]">
             {idx > 0 && <span className="text-white/30">vs</span>}
             <span
-              className="font-semibold"
+              className="inline-flex items-center gap-[0.4vw] font-semibold"
               style={{ color: colorHex(t.color) }}
             >
-              {t.emoji} {t.name}
+              <Mascot name={t.emoji} size={24} />
+              {t.name}
             </span>
           </span>
         ))}
@@ -248,7 +265,9 @@ function NowPlayingItem({ match }: { match: LiveMatch }) {
       {match.stationName && (
         <span className="text-white/35">@ {match.stationName}</span>
       )}
-      <span className="text-white/15">•</span>
+      <span className="text-white/15">
+        <Icon name="circuit" size={10} />
+      </span>
     </span>
   );
 }

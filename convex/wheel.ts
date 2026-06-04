@@ -99,10 +99,9 @@ export const recordSpin = mutation({
 
     await recordActivity(ctx, event._id, {
       kind: "bonus",
-      message: `🎡 ${team.emoji} ${team.name} spun the wheel → ${spot.label}${
+      message: `${team.name} spun the wheel and landed on ${spot.label}${
         points ? ` (${points > 0 ? "+" : ""}${points} pts)` : ""
       }`,
-      emoji: "🎡",
       teamId,
     });
 

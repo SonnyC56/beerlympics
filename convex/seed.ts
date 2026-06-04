@@ -30,7 +30,7 @@ const PHASES = [
   {
     name: "Semifinals",
     kind: "semifinal" as const,
-    description: "🎲 Beer Die unlocks — the marquee table opens for the top teams only.",
+    description: "Beer Die unlocks — the marquee table opens for the top teams only.",
   },
   {
     name: "Finals",
@@ -53,14 +53,14 @@ export const run = mutation({
     const dateIso = args.dateIso ?? "2026-06-13";
     const eventId = await ctx.db.insert("events", {
       slug: "iv",
-      name: args.name ?? "Beerlympics IV",
-      tagline: "The fourth annual backyard games.",
+      name: args.name ?? "Sonny's 4th Annual Beer Olympics",
+      tagline: "The 4th annual backyard games.",
       description:
-        "Three categories — beer, drinking, and long games. One champion. Cycle through the stations, climb the live leaderboard, and earn your way into the Beer Die finale.",
+        "Drinking games and lawn games. One champion. Cycle through the stations, climb the live leaderboard, and earn your way into the Beer Die finale.",
       dateIso,
       startTime: "12:00 PM",
       location: "The Backyard",
-      coverEmoji: "🏅",
+      coverEmoji: "trophy",
       coverColor: "gold",
       hostCode: "HOST",
       status: "rsvp",
@@ -116,8 +116,7 @@ export const run = mutation({
     await ctx.db.insert("activity", {
       eventId,
       kind: "announcement",
-      message: "🏟️ Beerlympics IV is open for RSVPs! Build your team. 🍺",
-      emoji: "🏟️",
+      message: "Sonny's 4th Annual Beer Olympics is open for RSVPs! Build your team.",
       createdAt: Date.now(),
     });
 
@@ -134,7 +133,7 @@ export const run = mutation({
  * Migrate an EXISTING event up to the current catalog — without wiping teams,
  * RSVPs, or scores. Backfills rules + art on existing games, adds any new games
  * (Snappa, Stack Cup, Boat Race, Fuck Ya Buddy) and their stations, migrates
- * categories (beer→drinking, long→lawn) + the scoring multipliers, and nudges
+ * categories (beer->drinking, long->lawn) + the scoring multipliers, and nudges
  * the title/date to Beerlympics IV if still on the old defaults. Idempotent —
  * safe to run as many times as you like.
  */
@@ -144,15 +143,24 @@ export const resync = mutation({
     const event = await getActiveEvent(ctx);
     if (!event) throw new Error("No event yet — run seed:run first.");
 
-    // 1) Title / date — only if still on the original defaults (don't clobber edits).
+    // 1) Title / date — only if still on a known default (don't clobber edits).
     const eventPatch: Record<string, unknown> = {};
-    if (event.name === "Beerlympics 2026") eventPatch.name = "Beerlympics IV";
+    if (["Beerlympics 2026", "Beerlympics IV"].includes(event.name)) {
+      eventPatch.name = "Sonny's 4th Annual Beer Olympics";
+    }
     if (event.dateIso === "2026-07-04") {
       eventPatch.dateIso = "2026-06-13";
       eventPatch.slug = "iv";
     }
-    if (event.tagline === "The annual backyard games.") {
-      eventPatch.tagline = "The fourth annual backyard games.";
+    if (
+      event.tagline === "The annual backyard games." ||
+      event.tagline === "The fourth annual backyard games."
+    ) {
+      eventPatch.tagline = "The 4th annual backyard games.";
+    }
+    // Migrate the cover from an emoji to a mascot key.
+    if (event.coverEmoji === "🏅" || event.coverEmoji === "medalGold") {
+      eventPatch.coverEmoji = "trophy";
     }
 
     // 2) Migrate scoring multipliers into the two-category world.
@@ -243,7 +251,7 @@ export const resync = mutation({
       }
       if (match) {
         await ctx.db.patch(match._id, {
-          ...fields, // includes name → renames aliased games to the canonical name
+          ...fields, // includes name -> renames aliased games to the canonical name
           enabled: match.enabled ?? g.enabled ?? true, // keep host's choice
         });
         updated++;
@@ -287,12 +295,12 @@ export const demo = mutation({
     const event = await getActiveEvent(ctx);
     if (!event) throw new Error("Seed the event first (convex run seed:run).");
     const roster = [
-      { name: "The Hop Stars", emoji: "⭐", color: "gold", theme: "All-Stars" },
-      { name: "Lager Than Life", emoji: "🦁", color: "flame", theme: "Safari" },
-      { name: "Pour Decisions", emoji: "🍻", color: "cyan", theme: "Frat" },
-      { name: "Ale Mary", emoji: "🙏", color: "grape", theme: "Hail Mary" },
-      { name: "Brewtal Squad", emoji: "💀", color: "lime", theme: "Metal" },
-      { name: "Sip Happens", emoji: "🌊", color: "orange", theme: "Beach" },
+      { name: "The Hop Stars", emoji: "star", color: "gold", theme: "All-Stars" },
+      { name: "Lager Than Life", emoji: "lion", color: "flame", theme: "Safari" },
+      { name: "Pour Decisions", emoji: "beer", color: "cyan", theme: "Frat" },
+      { name: "Ale Mary", emoji: "clover", color: "grape", theme: "Hail Mary" },
+      { name: "Brewtal Squad", emoji: "skull", color: "lime", theme: "Metal" },
+      { name: "Sip Happens", emoji: "wave", color: "orange", theme: "Beach" },
     ];
     const count = Math.min(teams ?? 6, roster.length);
     const created: Id<"teams">[] = [];

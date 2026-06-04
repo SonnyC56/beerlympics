@@ -93,8 +93,8 @@ export const payloadsForMatch = internalQuery({
         .join(" & ");
       const where = station?.name ? ` at ${station.name}` : "";
       const vs = opponents ? ` vs ${opponents}` : "";
-      const title = "🏟️ You're up!";
-      const body = `${game?.emoji ?? "🎯"} ${game?.name ?? "Your match"}${where}${vs}`;
+      const title = "You're up!";
+      const body = `${game?.name ?? "Your match"}${where}${vs}`;
 
       const players = await ctx.db
         .query("players")

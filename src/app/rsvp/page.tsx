@@ -6,6 +6,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useIdentity } from "@/lib/identity";
 import { EmptyState, Spinner } from "@/components/primitives";
+import { Icon, Mascot, type IconName } from "@/components/Icon";
 import { formatEventDate } from "@/lib/format";
 import { RsvpForm, GuestAvatar } from "@/components/RsvpForm";
 
@@ -34,7 +35,7 @@ export default function RsvpPage() {
     return (
       <div className="py-6">
         <EmptyState
-          emoji="🗓️"
+          icon="calendar"
           title="No event yet"
           subtitle="The host hasn't set up the Beerlympics. Check back soon — or head home to start one."
           action={
@@ -101,18 +102,28 @@ type EventDoc = {
 function EventHero({ event }: { event: EventDoc }) {
   return (
     <section className="panel stadium-grid relative overflow-hidden p-6 text-center">
-      <div className="pointer-events-none absolute -right-8 -top-10 text-[120px] opacity-10">
-        {event.coverEmoji}
+      <div className="pointer-events-none absolute -right-8 -top-10 opacity-10">
+        <Mascot name={event.coverEmoji} size={120} />
       </div>
       <div className="relative">
-        <span className="chip mx-auto mb-3 text-[var(--color-gold-300)]">
-          {event.status === "live"
-            ? "🔴 Happening now"
-            : event.status === "finished"
-              ? "🏆 The games are over"
-              : "🎟️ You're invited"}
+        <span className="chip mx-auto mb-3 inline-flex items-center gap-1.5 text-[var(--color-gold-300)]">
+          {event.status === "live" ? (
+            <>
+              <Icon name="live" size={13} /> Happening now
+            </>
+          ) : event.status === "finished" ? (
+            <>
+              <Icon name="trophy" size={13} /> The games are over
+            </>
+          ) : (
+            <>
+              <Icon name="ticket" size={13} /> You&apos;re invited
+            </>
+          )}
         </span>
-        <div className="text-5xl">{event.coverEmoji}</div>
+        <div className="flex justify-center text-medal">
+          <Mascot name={event.coverEmoji} size={48} />
+        </div>
         <h1 className="mt-2 font-display text-4xl leading-none text-medal">
           {event.name}
         </h1>
@@ -120,20 +131,28 @@ function EventHero({ event }: { event: EventDoc }) {
           <p className="mt-2 text-sm text-white/60">{event.tagline}</p>
         )}
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-white/70">
-          <span className="chip">📅 {formatEventDate(event.dateIso)}</span>
-          {event.startTime && <span className="chip">⏰ {event.startTime}</span>}
+          <span className="chip inline-flex items-center gap-1.5">
+            <Icon name="calendar" size={13} /> {formatEventDate(event.dateIso)}
+          </span>
+          {event.startTime && (
+            <span className="chip inline-flex items-center gap-1.5">
+              <Icon name="clock" size={13} /> {event.startTime}
+            </span>
+          )}
           {event.location &&
             (event.locationUrl ? (
               <a
                 href={event.locationUrl}
-                className="chip hover:text-white"
+                className="chip inline-flex items-center gap-1.5 hover:text-white"
                 target="_blank"
                 rel="noreferrer"
               >
-                📍 {event.location}
+                <Icon name="pin" size={13} /> {event.location}
               </a>
             ) : (
-              <span className="chip">📍 {event.location}</span>
+              <span className="chip inline-flex items-center gap-1.5">
+                <Icon name="pin" size={13} /> {event.location}
+              </span>
             ))}
         </div>
       </div>
@@ -158,9 +177,11 @@ function GuestList({ guests }: { guests: Guest[] | undefined }) {
   if (guests.length === 0) {
     return (
       <section className="panel p-5">
-        <h2 className="mb-1 font-display text-xl">🍻 The Guest List</h2>
+        <h2 className="mb-1 flex items-center gap-2 font-display text-xl">
+          <Icon name="beers" size={20} /> The Guest List
+        </h2>
         <EmptyState
-          emoji="👀"
+          icon="eye"
           title="Be the first to RSVP"
           subtitle="No one's responded yet. Lock in your spot above and start the hype."
         />
@@ -171,14 +192,16 @@ function GuestList({ guests }: { guests: Guest[] | undefined }) {
   return (
     <section className="panel space-y-5 p-5">
       <div className="flex items-center justify-between">
-        <h2 className="font-display text-xl">🍻 The Guest List</h2>
+        <h2 className="flex items-center gap-2 font-display text-xl">
+          <Icon name="beers" size={20} /> The Guest List
+        </h2>
         <span className="chip text-[var(--color-gold-300)]">
           {headcount} coming
         </span>
       </div>
 
       <GuestGroup
-        emoji="🙌"
+        icon="handRaise"
         title="Going"
         accent="var(--color-win)"
         guests={going}
@@ -187,7 +210,7 @@ function GuestList({ guests }: { guests: Guest[] | undefined }) {
       />
       {maybe.length > 0 && (
         <GuestGroup
-          emoji="🤔"
+          icon="thinking"
           title="Maybe"
           accent="var(--color-gold-400)"
           guests={maybe}
@@ -196,7 +219,7 @@ function GuestList({ guests }: { guests: Guest[] | undefined }) {
       )}
       {out.length > 0 && (
         <GuestGroup
-          emoji="😢"
+          icon="sad"
           title="Can't make it"
           accent="var(--color-loss)"
           guests={out}
@@ -209,7 +232,7 @@ function GuestList({ guests }: { guests: Guest[] | undefined }) {
 }
 
 function GuestGroup({
-  emoji,
+  icon,
   title,
   accent,
   guests,
@@ -217,7 +240,7 @@ function GuestGroup({
   showPlusOnes,
   muted,
 }: {
-  emoji: string;
+  icon: IconName;
   title: string;
   accent: string;
   guests: Guest[];
@@ -228,8 +251,8 @@ function GuestGroup({
   return (
     <div>
       <div className="mb-2.5 flex items-center gap-2">
-        <span className="text-sm font-bold" style={{ color: accent }}>
-          {emoji} {title}
+        <span className="inline-flex items-center gap-1.5 text-sm font-bold" style={{ color: accent }}>
+          <Icon name={icon} size={15} /> {title}
         </span>
         <span className="font-display text-sm text-white/40">{guests.length}</span>
       </div>

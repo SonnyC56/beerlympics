@@ -7,6 +7,7 @@ import { useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import { useIdentity } from "@/lib/identity";
 import { usePush } from "@/lib/push";
+import { Icon, type IconName } from "@/components/Icon";
 import {
   Avatar,
   Sheet,
@@ -16,13 +17,13 @@ import {
 } from "./primitives";
 import { EmojiPicker } from "./EmojiColorPicker";
 
-const TABS = [
-  { href: "/", label: "Home", icon: "🏠" },
-  { href: "/games", label: "Games", icon: "🎮" },
-  { href: "/teams", label: "Teams", icon: "👥" },
-  { href: "/play", label: "Circuit", icon: "🎯" },
-  { href: "/scoreboard", label: "Board", icon: "🏆" },
-  { href: "/photos", label: "Photos", icon: "📸" },
+const TABS: { href: string; label: string; icon: IconName }[] = [
+  { href: "/", label: "Home", icon: "home" },
+  { href: "/games", label: "Games", icon: "games" },
+  { href: "/teams", label: "Teams", icon: "teams" },
+  { href: "/play", label: "Circuit", icon: "circuit" },
+  { href: "/scoreboard", label: "Board", icon: "trophy" },
+  { href: "/photos", label: "Photos", icon: "camera" },
 ];
 
 export function AppFrame({ children }: { children: ReactNode }) {
@@ -53,10 +54,12 @@ function Shell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-white/8 bg-[var(--color-ink-950)]/80 backdrop-blur-xl">
         <div className="flex items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl">{event?.coverEmoji ?? "🏅"}</span>
+            <span className="text-[var(--color-gold-400)]">
+              <Icon name="trophy" size={24} />
+            </span>
             <div className="leading-none">
               <div className="font-display text-lg tracking-wide text-white">
-                {event?.name ?? "Beerlympics"}
+                {event?.name ?? "Sonny's Beer Olympics"}
               </div>
               {event && (
                 <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/45">
@@ -65,7 +68,9 @@ function Shell({ children }: { children: ReactNode }) {
                       <span className="live-dot" /> LIVE NOW
                     </>
                   ) : event.status === "finished" ? (
-                    "🏆 Final results"
+                    <>
+                      <Icon name="trophy" size={12} /> Final results
+                    </>
                   ) : (
                     "RSVPs open"
                   )}
@@ -78,21 +83,21 @@ function Shell({ children }: { children: ReactNode }) {
               <Link
                 href="/host"
                 className={cx(
-                  "flex h-9 w-9 items-center justify-center rounded-full text-lg transition",
+                  "flex h-9 w-9 items-center justify-center rounded-full transition",
                   pathname.startsWith("/host")
                     ? "bg-[var(--color-gold-500)] text-[#1a1205]"
                     : "bg-white/8 hover:bg-white/15",
                 )}
                 title="Host controls"
               >
-                ⚙️
+                <Icon name="gear" size={18} />
               </Link>
             )}
             <button
               onClick={() => setProfileOpen(true)}
               className="flex items-center gap-2 rounded-full bg-white/8 py-1 pl-1 pr-3 transition hover:bg-white/15"
             >
-              <Avatar emoji={identity.user?.emoji ?? "🍺"} size={28} />
+              <Avatar emoji={identity.user?.emoji ?? "beer"} size={28} />
               <span className="max-w-24 truncate text-sm font-semibold">
                 {identity.hasProfile ? identity.user?.name : "Set name"}
               </span>
@@ -121,11 +126,11 @@ function Shell({ children }: { children: ReactNode }) {
               >
                 <span
                   className={cx(
-                    "text-xl transition",
+                    "transition",
                     active && "scale-110 drop-shadow-[0_0_8px_rgba(247,183,51,0.5)]",
                   )}
                 >
-                  {t.icon}
+                  <Icon name={t.icon} size={22} />
                 </span>
                 {t.label}
               </Link>
@@ -142,7 +147,10 @@ function Shell({ children }: { children: ReactNode }) {
 function SplashScreen() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center gap-5">
-      <div className="text-6xl animate-float">🏅🍺</div>
+      <div className="flex animate-float items-center gap-2 text-[var(--color-gold-400)]">
+        <Icon name="trophy" size={52} />
+        <Icon name="beer" size={52} />
+      </div>
       <div className="h-7 w-7 animate-spin rounded-full border-2 border-white/15 border-t-[var(--color-gold-500)]" />
     </div>
   );
@@ -154,11 +162,16 @@ function SignInScreen() {
   return (
     <div className="flex min-h-[100dvh] flex-col items-center justify-center px-6">
       <div className="panel stadium-grid w-full max-w-sm p-7 text-center animate-rise">
-        <div className="text-6xl animate-float">🏅🍺</div>
-        <h1 className="mt-3 font-display text-4xl text-medal">Beerlympics</h1>
+        <div className="flex animate-float items-center justify-center gap-2 text-[var(--color-gold-400)]">
+          <Icon name="trophy" size={52} />
+          <Icon name="beer" size={52} />
+        </div>
+        <h1 className="mt-3 font-display text-4xl leading-none text-medal">
+          Sonny&rsquo;s Beer Olympics
+        </h1>
         <p className="mt-2 text-sm text-white/60">
           Sign in to RSVP, draft your team, and compete. One tap — your spot follows
-          you across devices.
+          you year to year.
         </p>
         <div className="mt-6 space-y-2.5">
           <button
@@ -167,12 +180,6 @@ function SignInScreen() {
           >
             <span className="text-base font-black text-[#4285F4]">G</span> Continue with
             Google
-          </button>
-          <button
-            className="btn w-full bg-black py-3.5 font-bold text-white ring-1 ring-white/15 hover:bg-[#141414]"
-            onClick={() => run(() => identity.signInApple())}
-          >
-            <span className="text-base"></span> Continue with Apple
           </button>
         </div>
         <p className="mt-5 text-xs text-white/35">
@@ -188,7 +195,7 @@ function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void })
   const run = useAction();
   const push = usePush();
   const [name, setName] = useState("");
-  const [emoji, setEmoji] = useState("🍺");
+  const [emoji, setEmoji] = useState("beer");
   const [hostCode, setHostCode] = useState("");
   const [showHost, setShowHost] = useState(false);
 
@@ -200,7 +207,7 @@ function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void })
           ? identity.user.name
           : "",
       );
-      setEmoji(identity.user?.emoji ?? "🍺");
+      setEmoji(identity.user?.emoji ?? "beer");
       setShowHost(false);
       setHostCode("");
     }
@@ -245,8 +252,8 @@ function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void })
         <div className="hairline pt-4">
           {identity.isHost ? (
             <div className="flex items-center justify-between rounded-2xl bg-[var(--color-gold-500)]/10 px-4 py-3">
-              <div className="text-sm font-semibold text-[var(--color-gold-300)]">
-                👑 You're a host
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-[var(--color-gold-300)]">
+                <Icon name="crown" size={16} /> You&apos;re a host
               </div>
               <button
                 className="text-xs text-white/50 underline"
@@ -257,10 +264,10 @@ function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void })
             </div>
           ) : !showHost ? (
             <button
-              className="text-sm text-white/50 underline"
+              className="inline-flex items-center gap-1 text-sm text-white/50 underline"
               onClick={() => setShowHost(true)}
             >
-              I'm the host →
+              I&apos;m the host <Icon name="arrowRight" size={14} />
             </button>
           ) : (
             <div className="space-y-2">
@@ -279,7 +286,7 @@ function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void })
                   onClick={() =>
                     run(
                       () => identity.claimHost(hostCode),
-                      "Host unlocked! ⚙️",
+                      "Host unlocked!",
                     )
                   }
                 >
@@ -293,7 +300,9 @@ function ProfileSheet({ open, onClose }: { open: boolean; onClose: () => void })
         {push.supported && (
           <div className="hairline flex items-center justify-between gap-3 pt-4">
             <div>
-              <div className="font-bold text-white">🔔 &ldquo;You&rsquo;re up&rdquo; alerts</div>
+              <div className="flex items-center gap-1.5 font-bold text-white">
+                <Icon name="bell" size={16} /> &ldquo;You&rsquo;re up&rdquo; alerts
+              </div>
               <div className="text-xs text-white/45">
                 {push.permission === "denied"
                   ? "Blocked — enable notifications in your browser settings."

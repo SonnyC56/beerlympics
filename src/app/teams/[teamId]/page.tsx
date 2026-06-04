@@ -17,8 +17,10 @@ import {
   useNow,
 } from "@/components/primitives";
 import { ColorPicker, EmojiPicker } from "@/components/EmojiColorPicker";
+import { Icon, Mascot, Medal } from "@/components/Icon";
+import type { IconName } from "@/components/icons/kit";
 import { colorHex } from "@/lib/teamColors";
-import { ordinal, placeMedal, timeAgo } from "@/lib/format";
+import { ordinal, timeAgo } from "@/lib/format";
 
 type Member = {
   _id: Id<"players">;
@@ -79,12 +81,16 @@ export default function TeamDetailPage() {
         <BackLink />
         <div className="panel mt-4">
           <EmptyState
-            emoji="🫥"
+            icon="teams"
             title="Team not found"
             subtitle="This squad may have disbanded."
             action={
-              <Link href="/teams" className="btn btn-gold">
-                ← All teams
+              <Link
+                href="/teams"
+                className="btn btn-gold flex items-center justify-center gap-2"
+              >
+                <Icon name="arrowLeft" size={16} />
+                All teams
               </Link>
             }
           />
@@ -124,13 +130,15 @@ export default function TeamDetailPage() {
           style={{ background: `linear-gradient(90deg, ${hex}, ${hex}22)` }}
         />
         <div
-          className="pointer-events-none absolute -right-10 -top-10 text-[160px] leading-none opacity-10"
+          className="pointer-events-none absolute -right-10 -top-10 leading-none opacity-10"
           style={{ color: hex }}
         >
-          {team.emoji}
+          <Mascot name={team.emoji} size={160} />
         </div>
         <div className="relative">
-          <div className="text-7xl drop-shadow">{team.emoji}</div>
+          <div className="flex justify-center drop-shadow">
+            <Mascot name={team.emoji} size={72} />
+          </div>
           <h1
             className="mt-2 font-display text-4xl leading-none"
             style={{ color: hex }}
@@ -149,17 +157,23 @@ export default function TeamDetailPage() {
           <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
             {standing && (
               <span
-                className="rounded-full px-3 py-1 text-sm font-black"
+                className="flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-black"
                 style={{ background: `${hex}22`, color: hex, border: `1px solid ${hex}55` }}
               >
-                {placeMedal(standing.rank) || "🏅"} {ordinal(standing.rank)} place
+                {standing.rank <= 3 ? (
+                  <Medal rank={standing.rank} size={16} />
+                ) : (
+                  <Icon name="medalGold" size={16} />
+                )}
+                {ordinal(standing.rank)} place
               </span>
             )}
             {typeof team.seed === "number" && (
               <span className="chip">Seed #{team.seed}</span>
             )}
-            <span className="chip">
-              👥 {team.members.length}{" "}
+            <span className="chip flex items-center gap-1.5">
+              <Icon name="teams" size={14} />
+              {team.members.length}{" "}
               {team.members.length === 1 ? "player" : "players"}
             </span>
           </div>
@@ -179,15 +193,16 @@ export default function TeamDetailPage() {
             <div className="mt-5 flex justify-center gap-2">
               {canEdit && (
                 <button
-                  className="btn btn-ghost px-4 py-2 text-sm"
+                  className="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-sm"
                   onClick={() => setEditOpen(true)}
                 >
-                  ✏️ Edit
+                  <Icon name="edit" size={14} />
+                  Edit
                 </button>
               )}
               {amMember && (
                 <button
-                  className="btn btn-ghost px-4 py-2 text-sm text-[var(--color-loss)]"
+                  className="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-sm text-[var(--color-loss)]"
                   disabled={!identity.deviceId}
                   onClick={() =>
                     run(
@@ -196,12 +211,13 @@ export default function TeamDetailPage() {
                     ).then((ok) => ok && router.push("/teams"))
                   }
                 >
-                  🚪 Leave
+                  <Icon name="arrowLeft" size={14} />
+                  Leave
                 </button>
               )}
               {identity.isHost && (
                 <button
-                  className="btn btn-ghost px-4 py-2 text-sm text-[var(--color-loss)]"
+                  className="btn btn-ghost flex items-center gap-1.5 px-4 py-2 text-sm text-[var(--color-loss)]"
                   disabled={!identity.deviceId}
                   onClick={() => {
                     if (
@@ -220,7 +236,8 @@ export default function TeamDetailPage() {
                     ).then((ok) => ok && router.push("/teams"));
                   }}
                 >
-                  🗑️ Remove
+                  <Icon name="trash" size={14} />
+                  Remove
                 </button>
               )}
             </div>
@@ -230,7 +247,10 @@ export default function TeamDetailPage() {
 
       {/* Roster */}
       <section className="panel p-5">
-        <h2 className="mb-3 font-display text-xl">🧢 Roster</h2>
+        <h2 className="mb-3 flex items-center gap-2 font-display text-xl">
+          <Icon name="teams" size={20} />
+          Roster
+        </h2>
         {team.members.length === 0 ? (
           <p className="text-sm text-white/45">
             No players yet — this squad is looking for recruits.
@@ -264,14 +284,15 @@ export default function TeamDetailPage() {
                     </div>
                     {m.role === "captain" && (
                       <span
-                        className="shrink-0 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest"
+                        className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-widest"
                         style={{
                           background: `${hex}22`,
                           color: hex,
                           border: `1px solid ${hex}55`,
                         }}
                       >
-                        👑 Captain
+                        <Icon name="crown" size={12} />
+                        Captain
                       </span>
                     )}
                   </li>
@@ -283,7 +304,10 @@ export default function TeamDetailPage() {
 
       {/* Scoring breakdown */}
       <section className="panel p-5">
-        <h2 className="mb-3 font-display text-xl">📊 Points by Game</h2>
+        <h2 className="mb-3 flex items-center gap-2 font-display text-xl">
+          <Icon name="chart" size={20} />
+          Points by Game
+        </h2>
         {standings === undefined ? (
           <Spinner />
         ) : scoringGames.length === 0 ? (
@@ -299,7 +323,7 @@ export default function TeamDetailPage() {
                 <div key={g.gameId}>
                   <div className="mb-1 flex items-center justify-between text-sm">
                     <span className="flex items-center gap-2 text-white/80">
-                      <span>{g.emoji}</span>
+                      <Icon name="games" size={18} />
                       <span className="truncate">{g.name}</span>
                     </span>
                     <span
@@ -331,7 +355,10 @@ export default function TeamDetailPage() {
 
       {/* Points history / ledger */}
       <section className="panel p-5">
-        <h2 className="mb-3 font-display text-xl">🧾 Points History</h2>
+        <h2 className="mb-3 flex items-center gap-2 font-display text-xl">
+          <Icon name="clipboard" size={20} />
+          Points History
+        </h2>
         {ledger === undefined ? (
           <Spinner />
         ) : ledger.length === 0 ? (
@@ -345,7 +372,9 @@ export default function TeamDetailPage() {
                 key={entry._id}
                 className="flex items-center gap-3 rounded-2xl bg-white/4 px-3 py-2.5"
               >
-                <span className="text-xl">{ledgerEmoji(entry)}</span>
+                <span className="flex items-center text-xl">
+                  <LedgerIcon entry={entry} />
+                </span>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold text-white/85">
                     {ledgerLabel(entry)}
@@ -387,17 +416,28 @@ function BackLink() {
       href="/teams"
       className="inline-flex items-center gap-1.5 text-sm font-semibold text-white/55 hover:text-white"
     >
-      ← All teams
+      <Icon name="arrowLeft" size={14} />
+      All teams
     </Link>
   );
 }
 
-function ledgerEmoji(entry: LedgerEntry): string {
-  if (entry.reason === "placement") return placeMedal(entry.place) || "🎯";
-  if (entry.reason === "win") return "🏆";
-  if (entry.reason === "bonus") return "✨";
-  if (entry.reason === "penalty") return "⚠️";
-  return "✍️";
+function LedgerIcon({ entry }: { entry: LedgerEntry }) {
+  if (entry.reason === "placement") {
+    if (entry.place && entry.place <= 3) {
+      return <Medal rank={entry.place} size={20} />;
+    }
+    return <Icon name="target" size={20} />;
+  }
+  const name: IconName =
+    entry.reason === "win"
+      ? "trophy"
+      : entry.reason === "bonus"
+        ? "sparkle"
+        : entry.reason === "penalty"
+          ? "warning"
+          : "pencil";
+  return <Icon name={name} size={20} />;
 }
 
 function ledgerLabel(entry: LedgerEntry): string {
@@ -468,10 +508,10 @@ function EditTeamSheet({
       <div className="space-y-5">
         <div className="flex items-center gap-3 rounded-2xl bg-white/4 p-3">
           <span
-            className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl"
+            className="flex h-12 w-12 items-center justify-center rounded-xl"
             style={{ background: `${hex}1f`, border: `1px solid ${hex}66` }}
           >
-            {emoji}
+            <Mascot name={emoji} size={26} />
           </span>
           <div className="min-w-0">
             <div className="truncate font-display text-xl text-white">
@@ -530,7 +570,7 @@ function EditTeamSheet({
         </div>
         <div>
           <label className="mb-2 block text-sm font-semibold text-white/70">
-            Team emoji {emoji}
+            Team mascot
           </label>
           <EmojiPicker value={emoji} onChange={setEmoji} />
         </div>
@@ -540,7 +580,10 @@ function EditTeamSheet({
           disabled={!valid || !identity.deviceId}
           onClick={submit}
         >
-          💾 Save changes
+          <span className="flex items-center justify-center gap-2">
+            <Icon name="save" size={16} />
+            Save changes
+          </span>
         </button>
       </div>
     </Sheet>

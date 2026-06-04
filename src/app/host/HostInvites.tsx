@@ -1,12 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useIdentity } from "@/lib/identity";
 import { Spinner, cx, useAction, useToast } from "@/components/primitives";
-import { HostField, HostSectionTitle, MiniButton } from "./HostKit";
+import { Icon } from "@/components/Icon";
+import { HostField, MiniButton } from "./HostKit";
+
+/** Section header with a leading SVG icon (emoji-free). */
+function SectionTitle({ icon, title }: { icon: ReactNode; title: string }) {
+  return (
+    <div className="mb-3 flex items-center justify-between gap-3">
+      <h2 className="flex items-center gap-1.5 font-display text-xl text-white">
+        <span className="inline-flex shrink-0">{icon}</span>
+        {title}
+      </h2>
+    </div>
+  );
+}
 
 type Invite = {
   _id: Id<"invites">;
@@ -47,7 +60,7 @@ export function HostInvites() {
 
       {/* ── Invite list ────────────────────────────────────────────────── */}
       <section className="panel p-5">
-        <HostSectionTitle emoji="🔗" title="Invite Links" />
+        <SectionTitle icon={<Icon name="link" size={20} />} title="Invite Links" />
         {invites === undefined ? (
           <Spinner />
         ) : invites.length === 0 ? (
@@ -71,7 +84,7 @@ function HostCodeCard({ hostCode }: { hostCode: string | null | undefined }) {
   const toast = useToast();
   return (
     <section className="panel stadium-grid p-5">
-      <HostSectionTitle emoji="👑" title="Host Code" />
+      <SectionTitle icon={<Icon name="crown" size={20} />} title="Host Code" />
       <p className="mb-3 text-sm text-white/55">
         Share this code with a co-host so they can run controls from their own
         phone.
@@ -119,7 +132,7 @@ function CreateInvite() {
 
   return (
     <section className="panel p-5">
-      <HostSectionTitle emoji="✉️" title="New Invite" />
+      <SectionTitle icon={<Icon name="envelope" size={20} />} title="New Invite" />
       <div className="space-y-3">
         <div className="grid grid-cols-2 gap-3">
           <HostField label="Label" hint="for you">
@@ -169,7 +182,9 @@ function CreateInvite() {
           )}
         >
           <div>
-            <div className="font-bold text-white">📧 Email it now</div>
+            <div className="flex items-center gap-1.5 font-bold text-white">
+              <Icon name="envelope" size={16} /> Email it now
+            </div>
             <div className="text-xs text-white/45">
               {recipientEmail
                 ? "Sends the link via Resend on create."
@@ -198,7 +213,7 @@ function CreateInvite() {
         </label>
 
         <button
-          className="btn btn-gold w-full"
+          className="btn btn-gold inline-flex w-full items-center justify-center gap-1.5"
           disabled={!identity.deviceId}
           onClick={() =>
             run(async () => {
@@ -220,7 +235,7 @@ function CreateInvite() {
             })
           }
         >
-          🔗 Create invite link
+          <Icon name="link" size={16} /> Create invite link
         </button>
       </div>
     </section>
@@ -263,18 +278,26 @@ function InviteRow({ invite }: { invite: Invite }) {
               {emailStatus && (
                 <span
                   className={cx(
-                    "font-bold",
+                    "inline-flex items-center gap-1 font-bold",
                     emailStatus === "sent" && "text-[var(--color-win)]",
                     emailStatus === "failed" && "text-[var(--color-loss)]",
                     emailStatus === "queued" && "text-[var(--color-gold-400)]",
                   )}
                 >
                   ·{" "}
-                  {emailStatus === "sent"
-                    ? "📨 sent"
-                    : emailStatus === "failed"
-                      ? "⚠️ failed"
-                      : "⏳ queued"}
+                  {emailStatus === "sent" ? (
+                    <>
+                      <Icon name="envelope" size={12} /> sent
+                    </>
+                  ) : emailStatus === "failed" ? (
+                    <>
+                      <Icon name="warning" size={12} /> failed
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="clock" size={12} /> queued
+                    </>
+                  )}
                 </span>
               )}
             </div>
@@ -290,7 +313,9 @@ function InviteRow({ invite }: { invite: Invite }) {
             toast("Link copied — paste it in a text!", "ok");
           }}
         >
-          📋 Copy link
+          <span className="inline-flex items-center gap-1.5">
+            <Icon name="clipboard" size={14} /> Copy link
+          </span>
         </MiniButton>
         {invite.recipientEmail && (
           <MiniButton
@@ -307,7 +332,9 @@ function InviteRow({ invite }: { invite: Invite }) {
               )
             }
           >
-            📧 Resend
+            <span className="inline-flex items-center gap-1.5">
+              <Icon name="envelope" size={14} /> Resend
+            </span>
           </MiniButton>
         )}
         <div className="ml-auto">

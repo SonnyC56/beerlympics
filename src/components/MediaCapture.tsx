@@ -6,6 +6,7 @@ import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
 import { useIdentity } from "@/lib/identity";
 import { Avatar, Sheet, TeamBadge, cx, useToast } from "@/components/primitives";
+import { Icon } from "@/components/Icon";
 
 type TeamLite = { _id: Id<"teams">; name: string; emoji: string; color: string };
 type Stage = "idle" | "uploading" | "saving";
@@ -103,7 +104,7 @@ export function MediaCapture({
         matchId,
         takenAt: file.lastModified || Date.now(),
       });
-      toast(file.type.startsWith("video") ? "Clip added! 🎬" : "Shot added! 📸", "ok");
+      toast(file.type.startsWith("video") ? "Clip added!" : "Shot added!", "ok");
       reset();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Upload failed", "err");
@@ -132,8 +133,12 @@ export function MediaCapture({
             canUpload ? "hover:brightness-110 active:scale-[0.99]" : "opacity-60",
           )}
         >
-          <span className="pointer-events-none absolute -right-6 -top-6 text-[110px] opacity-10">📸</span>
-          <span className="relative text-5xl animate-float">📸</span>
+          <span className="pointer-events-none absolute -right-6 -top-6 opacity-10">
+            <Icon name="camera" size={110} />
+          </span>
+          <span className="relative animate-float text-medal">
+            <Icon name="camera" size={48} />
+          </span>
           <span className="relative font-display text-2xl text-medal">{label ?? "Capture the Moment"}</span>
           <span className="relative text-sm text-white/60">Live camera or upload — photo or video</span>
         </button>
@@ -142,9 +147,9 @@ export function MediaCapture({
           type="button"
           onClick={() => setMenuOpen(true)}
           disabled={!canUpload}
-          className="btn btn-ghost px-3 py-2 text-sm disabled:opacity-50"
+          className="btn btn-ghost inline-flex items-center gap-1.5 px-3 py-2 text-sm disabled:opacity-50"
         >
-          📸 {label ?? "Add photo / video"}
+          <Icon name="camera" size={14} /> {label ?? "Add photo / video"}
         </button>
       )}
 
@@ -157,11 +162,11 @@ export function MediaCapture({
       {/* source picker */}
       <Sheet open={menuOpen} onClose={() => setMenuOpen(false)} title="Add a photo or video">
         <div className="space-y-2.5">
-          <button className="btn btn-gold w-full py-3.5" onClick={() => { setMenuOpen(false); setCamOpen(true); }}>
-            🎥 Use the camera
+          <button className="btn btn-gold flex w-full items-center justify-center gap-2 py-3.5" onClick={() => { setMenuOpen(false); setCamOpen(true); }}>
+            <Icon name="video" size={18} /> Use the camera
           </button>
-          <button className="btn btn-ghost w-full py-3.5" onClick={() => { setMenuOpen(false); inputRef.current?.click(); }}>
-            🖼️ Choose from library
+          <button className="btn btn-ghost flex w-full items-center justify-center gap-2 py-3.5" onClick={() => { setMenuOpen(false); inputRef.current?.click(); }}>
+            <Icon name="image" size={18} /> Choose from library
           </button>
           <p className="pt-1 text-center text-xs text-white/40">
             Everything is auto-timestamped{matchId ? " and tagged to this match" : ""}.
@@ -188,7 +193,7 @@ export function MediaCapture({
           </div>
 
           <div className="flex items-center gap-2 text-sm text-white/60">
-            <Avatar emoji={identity.user?.emoji ?? "🍺"} size={26} />
+            <Avatar emoji={identity.user?.emoji ?? "beer"} size={26} />
             Posting as <span className="font-semibold text-white/85">{identity.user?.name ?? "you"}</span>
           </div>
 
@@ -240,7 +245,9 @@ export function MediaCapture({
                   {stage === "saving" ? "Saving…" : "Uploading…"}
                 </span>
               ) : (
-                <>🚀 Post</>
+                <span className="inline-flex items-center gap-1.5">
+                  <Icon name="rocket" size={16} /> Post
+                </span>
               )}
             </button>
           </div>
@@ -350,16 +357,16 @@ function LiveCamera({ onFile, onClose }: { onFile: (f: File) => void; onClose: (
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-black">
       <div className="flex items-center justify-between px-4 py-3">
-        <button onClick={() => { stopStream(); onClose(); }} className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-bold text-white">
-          ✕ Close
+        <button onClick={() => { stopStream(); onClose(); }} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-bold text-white">
+          <Icon name="close" size={14} /> Close
         </button>
         {recording && (
           <span className="flex items-center gap-2 rounded-full bg-[var(--color-live)]/20 px-3 py-1 text-sm font-bold text-[var(--color-live)]">
             <span className="live-dot" /> {String(Math.floor(seconds / 60)).padStart(2, "0")}:{String(seconds % 60).padStart(2, "0")}
           </span>
         )}
-        <button onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))} className="rounded-full bg-white/10 px-3 py-1.5 text-sm font-bold text-white">
-          🔄 Flip
+        <button onClick={() => setFacing((f) => (f === "environment" ? "user" : "environment"))} className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-sm font-bold text-white">
+          <Icon name="refresh" size={14} /> Flip
         </button>
       </div>
 
@@ -376,10 +383,10 @@ function LiveCamera({ onFile, onClose }: { onFile: (f: File) => void; onClose: (
           <button
             onClick={takePhoto}
             disabled={recording}
-            className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-white/20 text-2xl disabled:opacity-40"
+            className="flex h-16 w-16 items-center justify-center rounded-full border-4 border-white bg-white/20 text-white disabled:opacity-40"
             aria-label="Take photo"
           >
-            📷
+            <Icon name="camera" size={28} />
           </button>
           <button
             onClick={recording ? stopRec : startRec}
