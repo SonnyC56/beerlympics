@@ -44,9 +44,12 @@ function Shell({ children }: { children: ReactNode }) {
   const chromeless = pathname.startsWith("/scoreboard/tv");
   if (chromeless) return <>{children}</>;
 
-  // Auth gate: everyone signs in with Google / Apple before entering.
+  // Auth gate. Invite links (/i/<code>) are the one exception: a brand-new
+  // guest sees their personalized invite and signs in from there (returning
+  // right back to it), instead of hitting the generic sign-in wall first.
+  const isInvite = pathname.startsWith("/i/");
   if (!identity.ready) return <SplashScreen />;
-  if (!identity.isAuthenticated) return <SignInScreen />;
+  if (!identity.isAuthenticated && !isInvite) return <SignInScreen />;
 
   return (
     <div className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col">
@@ -93,15 +96,30 @@ function Shell({ children }: { children: ReactNode }) {
                 <Icon name="gear" size={18} />
               </Link>
             )}
-            <button
-              onClick={() => setProfileOpen(true)}
-              className="flex items-center gap-2 rounded-full bg-white/8 py-1 pl-1 pr-3 transition hover:bg-white/15"
-            >
-              <Avatar emoji={identity.user?.emoji ?? "beer"} size={28} />
-              <span className="max-w-24 truncate text-sm font-semibold">
-                {identity.hasProfile ? identity.user?.name : "Set name"}
-              </span>
-            </button>
+            {identity.isAuthenticated ? (
+              <button
+                onClick={() => setProfileOpen(true)}
+                className="flex items-center gap-2 rounded-full bg-white/8 py-1 pl-1 pr-3 transition hover:bg-white/15"
+              >
+                <Avatar emoji={identity.user?.emoji ?? "beer"} size={28} />
+                <span className="max-w-24 truncate text-sm font-semibold">
+                  {identity.hasProfile ? identity.user?.name : "Set name"}
+                </span>
+              </button>
+            ) : (
+              <button
+                onClick={() =>
+                  identity.signInGoogle(
+                    typeof window !== "undefined"
+                      ? window.location.pathname + window.location.search
+                      : "/",
+                  )
+                }
+                className="btn btn-gold px-4 py-1.5 text-sm"
+              >
+                Sign in
+              </button>
+            )}
           </div>
         </div>
       </header>
@@ -109,7 +127,8 @@ function Shell({ children }: { children: ReactNode }) {
       {/* Content */}
       <main className="flex-1 px-4 pb-28 pt-4">{children}</main>
 
-      {/* Bottom nav */}
+      {/* Bottom nav — hidden until signed in (e.g. a guest viewing an invite) */}
+      {identity.isAuthenticated && (
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-white/8 bg-[var(--color-ink-950)]/90 backdrop-blur-xl">
         <div className="mx-auto flex max-w-2xl items-stretch justify-around px-2 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-2">
           {TABS.map((t) => {
@@ -138,6 +157,7 @@ function Shell({ children }: { children: ReactNode }) {
           })}
         </div>
       </nav>
+      )}
 
       <ProfileSheet open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
@@ -176,7 +196,15 @@ function SignInScreen() {
         <div className="mt-6 space-y-2.5">
           <button
             className="btn w-full bg-white py-3.5 font-bold text-[#1a1205] hover:brightness-95"
-            onClick={() => run(() => identity.signInGoogle())}
+            onClick={() =>
+              run(() =>
+                identity.signInGoogle(
+                  typeof window !== "undefined"
+                    ? window.location.pathname + window.location.search
+                    : "/",
+                ),
+              )
+            }
           >
             <span className="text-base font-black text-[#4285F4]">G</span> Continue with
             Google

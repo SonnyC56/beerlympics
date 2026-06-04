@@ -144,8 +144,28 @@ export default function InvitePage() {
         </blockquote>
       )}
 
-      {/* RSVP */}
-      {existing === undefined ? (
+      {/* RSVP — sign in first (returning right back here), then the prefilled form */}
+      {!identity.isAuthenticated ? (
+        <div className="panel p-6 text-center">
+          <div className="flex justify-center text-medal">
+            <Icon name="beer" size={40} />
+          </div>
+          <h2 className="mt-2 font-display text-2xl text-white">
+            {recipientName ? `Ready, ${recipientName}?` : "Ready to lock it in?"}
+          </h2>
+          <p className="mx-auto mt-1 max-w-xs text-sm text-white/60">
+            Sign in with Google to RSVP and join the games — one tap, and it brings you
+            right back to this invite.
+          </p>
+          <button
+            className="btn mt-4 w-full bg-white py-3.5 font-bold text-[#1a1205] hover:brightness-95"
+            onClick={() => void identity.signInGoogle(`/i/${code}`)}
+          >
+            <span className="text-base font-black text-[#4285F4]">G</span> Sign in with
+            Google to RSVP
+          </button>
+        </div>
+      ) : existing === undefined ? (
         <div className="panel p-6">
           <Spinner label="Checking your RSVP…" />
         </div>

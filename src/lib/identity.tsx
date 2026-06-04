@@ -26,7 +26,7 @@ type IdentityValue = {
   hasProfile: boolean;
   isAuthenticated: boolean;
   isLoading: boolean;
-  signInGoogle: () => Promise<void>;
+  signInGoogle: (redirectTo?: string) => Promise<void>;
   signInApple: () => Promise<void>;
   signOut: () => Promise<void>;
   setProfile: (name: string, emoji?: string) => Promise<void>;
@@ -80,8 +80,10 @@ export function IdentityProvider({ children }: { children: React.ReactNode }) {
       hasProfile: !!user?.name,
       isAuthenticated,
       isLoading,
-      signInGoogle: async () => {
-        await signIn("google");
+      signInGoogle: async (redirectTo?: string) => {
+        // redirectTo brings the guest back to where they started (e.g. their
+        // /i/<code> invite) after the Google OAuth round-trip, instead of "/".
+        await signIn("google", redirectTo ? { redirectTo } : undefined);
       },
       signInApple: async () => {
         await signIn("apple");
