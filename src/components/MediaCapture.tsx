@@ -23,6 +23,7 @@ export function MediaCapture({
   teamId: lockedTeamId,
   variant = "hero",
   label,
+  roast = false,
 }: {
   className?: string;
   matchId?: Id<"matches">;
@@ -30,6 +31,7 @@ export function MediaCapture({
   teamId?: Id<"teams">;
   variant?: "hero" | "chip";
   label?: string;
+  roast?: boolean;
 }) {
   const identity = useIdentity();
   const toast = useToast();
@@ -103,8 +105,9 @@ export function MediaCapture({
         gameId,
         matchId,
         takenAt: file.lastModified || Date.now(),
+        roast: roast || undefined,
       });
-      toast(file.type.startsWith("video") ? "Clip added!" : "Shot added!", "ok");
+      toast(roast ? "Roast posted!" : file.type.startsWith("video") ? "Clip added!" : "Shot added!", "ok");
       reset();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Upload failed", "err");

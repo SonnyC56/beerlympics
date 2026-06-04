@@ -58,6 +58,15 @@ export default function ScoreboardTvPage() {
       {/* -- Header -- */}
       <header className="relative flex items-center justify-between gap-6 px-[3vw] pt-[3vh]">
         <div className="flex items-center gap-4">
+          {!finished && (
+            <span
+              className="relative inline-flex text-[var(--color-flame)] animate-flame"
+              style={{ filter: "drop-shadow(0 0 18px #ff8a1e88)" }}
+              aria-hidden
+            >
+              <Icon name="flame" size={48} className="h-[6vh] w-[6vh]" />
+            </span>
+          )}
           <Mascot
             name={event?.coverEmoji ?? "trophy"}
             size={64}

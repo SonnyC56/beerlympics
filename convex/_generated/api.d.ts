@@ -11,6 +11,7 @@
 import type * as activity from "../activity.js";
 import type * as admin from "../admin.js";
 import type * as auth from "../auth.js";
+import type * as ceremony from "../ceremony.js";
 import type * as email from "../email.js";
 import type * as engine from "../engine.js";
 import type * as events from "../events.js";
@@ -22,6 +23,7 @@ import type * as lib from "../lib.js";
 import type * as matches from "../matches.js";
 import type * as media from "../media.js";
 import type * as phases from "../phases.js";
+import type * as predictions from "../predictions.js";
 import type * as push from "../push.js";
 import type * as pushSender from "../pushSender.js";
 import type * as rsvp from "../rsvp.js";
@@ -44,6 +46,7 @@ declare const fullApi: ApiFromModules<{
   activity: typeof activity;
   admin: typeof admin;
   auth: typeof auth;
+  ceremony: typeof ceremony;
   email: typeof email;
   engine: typeof engine;
   events: typeof events;
@@ -55,6 +58,7 @@ declare const fullApi: ApiFromModules<{
   matches: typeof matches;
   media: typeof media;
   phases: typeof phases;
+  predictions: typeof predictions;
   push: typeof push;
   pushSender: typeof pushSender;
   rsvp: typeof rsvp;

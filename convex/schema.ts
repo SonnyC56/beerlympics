@@ -52,6 +52,20 @@ export default defineSchema({
       v.literal("finished"),
     ),
     currentPhaseIndex: v.number(), // which phase is active (-1 = pre-game)
+    // Opening ceremony state (host-driven "Parade of Nations" on the TV).
+    ceremony: v.optional(
+      v.object({
+        stage: v.union(
+          v.literal("idle"), // not running
+          v.literal("parade"), // revealing teams one by one
+          v.literal("anthem"), // flag wall + national anthem
+          v.literal("torch"), // light-the-torch finale
+          v.literal("live"), // torch lit, games on
+        ),
+        activeIndex: v.number(), // which team (reverse-seed order) is on screen
+        updatedAt: v.number(),
+      }),
+    ),
     // Scoring knobs the host can tune.
     settings: v.object({
       // Keyed by category string (e.g. { drinking: 1, lawn: 1.5 }).
@@ -142,6 +156,7 @@ export default defineSchema({
     motto: v.optional(v.string()),
     color: v.string(), // hex or theme token used across the UI
     emoji: v.string(),
+    walkoutSong: v.optional(v.string()), // played during the opening parade
     captainUserId: v.id("users"),
     seed: v.optional(v.number()), // overall seed for bracket placement
     createdAt: v.number(),
@@ -317,6 +332,7 @@ export default defineSchema({
     gameId: v.optional(v.id("games")),
     matchId: v.optional(v.id("matches")), // tag to a specific match
     caption: v.optional(v.string()),
+    roast: v.optional(v.boolean()), // a "Roast Cam" trash-talk confessional
     takenAt: v.number(), // capture timestamp (client clock)
     durationMs: v.optional(v.number()),
     favorite: v.boolean(), // flagged for the highlight reel
@@ -326,7 +342,8 @@ export default defineSchema({
     .index("by_uploader", ["uploaderUserId"])
     .index("by_team", ["teamId"])
     .index("by_match", ["matchId"])
-    .index("by_event_and_favorite", ["eventId", "favorite"]),
+    .index("by_event_and_favorite", ["eventId", "favorite"])
+    .index("by_event_and_roast", ["eventId", "roast"]),
 
   // ── Wheel spins (log of who spun the wheel and what they got) ───────────────
   wheelSpins: defineTable({
@@ -353,6 +370,20 @@ export default defineSchema({
   })
     .index("by_user", ["userId"])
     .index("by_endpoint", ["endpoint"]),
+
+  // ── Opening Odds (pre-game podium predictions) ──────────────────────────────
+  predictions: defineTable({
+    eventId: v.id("events"),
+    userId: v.id("users"),
+    name: v.string(), // denormalized predictor name
+    first: v.id("teams"),
+    second: v.optional(v.id("teams")),
+    third: v.optional(v.id("teams")),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_event_and_user", ["eventId", "userId"]),
 
   // ── Live activity ticker ────────────────────────────────────────────────────
   activity: defineTable({

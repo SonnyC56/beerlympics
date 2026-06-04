@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
@@ -56,6 +57,8 @@ export function HostRun() {
   return (
     <div className="space-y-5">
       <StatusControl status={event.status} />
+
+      <CeremonyControl />
 
       {stats && (
         <section className="grid grid-cols-4 gap-2.5">
@@ -141,6 +144,161 @@ function StatusControl({ status }: { status: string }) {
         })}
       </div>
       <p className="mt-3 text-xs text-white/45">{blurb[status] ?? ""}</p>
+    </section>
+  );
+}
+
+// ── Opening ceremony control (Parade of Nations) ───────────────────────────────
+type CeremonyData = {
+  stage: "idle" | "parade" | "anthem" | "torch" | "live";
+  activeIndex: number;
+  total: number;
+  lineup: { _id: string; name: string; emoji: string; color: string; walkoutSong?: string }[];
+} | null;
+
+function CeremonyControl() {
+  const identity = useIdentity();
+  const run = useAction();
+  const data = useQuery(api.ceremony.get, {}) as CeremonyData | undefined;
+  const start = useMutation(api.ceremony.start);
+  const next = useMutation(api.ceremony.next);
+  const prev = useMutation(api.ceremony.prev);
+  const setStage = useMutation(api.ceremony.setStage);
+  const lightTorch = useMutation(api.ceremony.lightTorch);
+  const reset = useMutation(api.ceremony.reset);
+  const dev = identity.deviceId;
+
+  const stage = data?.stage ?? "idle";
+  const active = data?.lineup[data.activeIndex];
+
+  return (
+    <section className="panel p-5">
+      <div className="flex items-center justify-between gap-2">
+        <HostSectionTitle icon="flag" title="Opening Ceremony" />
+        <Link
+          href="/scoreboard/tv/parade"
+          target="_blank"
+          className="inline-flex shrink-0 items-center gap-1 text-xs font-bold text-[var(--color-gold-300)] underline"
+        >
+          Open TV screen <Icon name="arrowRight" size={12} />
+        </Link>
+      </div>
+
+      {data === undefined ? (
+        <Spinner />
+      ) : stage === "idle" ? (
+        <div className="space-y-3">
+          <p className="text-sm text-white/55">
+            Cast <span className="font-mono text-white/70">/scoreboard/tv/parade</span> to the
+            big screen, then run the Parade of Nations — teams revealed underdog-first with
+            their walk-out songs, the anthem, then light the torch to go live.
+          </p>
+          <button
+            className="btn btn-gold w-full inline-flex items-center justify-center gap-1.5"
+            disabled={!dev || (data?.total ?? 0) === 0}
+            onClick={() => run(() => start({ deviceId: dev! }), "Parade started!")}
+          >
+            <Icon name="flag" size={16} /> Begin the parade
+          </button>
+          {(data?.total ?? 0) === 0 && (
+            <p className="text-center text-xs text-white/40">Add teams first.</p>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {/* what's on screen */}
+          <div className="rounded-2xl border border-white/8 bg-black/25 p-3.5">
+            <div className="text-[11px] uppercase tracking-widest text-white/40">On screen now</div>
+            {stage === "parade" && active ? (
+              <div className="mt-1.5 flex items-center gap-2.5">
+                <Mascot name={active.emoji} size={28} />
+                <div className="min-w-0">
+                  <div className="truncate font-display text-lg text-white">{active.name}</div>
+                  <div className="truncate text-xs text-white/45">
+                    Team {data!.activeIndex + 1} of {data!.total}
+                    {active.walkoutSong ? ` · ${active.walkoutSong}` : " · no walk-out song set"}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-1.5 font-display text-lg text-white capitalize">
+                {stage === "anthem"
+                  ? "National Anthem · flag wall"
+                  : stage === "torch"
+                    ? "Torch — ready to light"
+                    : "Torch lit — games are LIVE"}
+              </div>
+            )}
+          </div>
+
+          {/* stage controls */}
+          {stage === "parade" && (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                className="btn btn-ghost inline-flex items-center justify-center gap-1.5"
+                disabled={!dev || data!.activeIndex === 0}
+                onClick={() => run(() => prev({ deviceId: dev! }))}
+              >
+                <Icon name="arrowLeft" size={15} /> Back
+              </button>
+              <button
+                className="btn btn-gold inline-flex items-center justify-center gap-1.5"
+                disabled={!dev}
+                onClick={() => run(() => next({ deviceId: dev! }))}
+              >
+                {data!.activeIndex >= data!.total - 1 ? "To anthem" : "Next team"}{" "}
+                <Icon name="arrowRight" size={15} />
+              </button>
+            </div>
+          )}
+          {stage === "anthem" && (
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                className="btn btn-ghost inline-flex items-center justify-center gap-1.5"
+                disabled={!dev}
+                onClick={() => run(() => prev({ deviceId: dev! }))}
+              >
+                <Icon name="arrowLeft" size={15} /> Parade
+              </button>
+              <button
+                className="btn btn-gold inline-flex items-center justify-center gap-1.5"
+                disabled={!dev}
+                onClick={() => run(() => setStage({ deviceId: dev!, stage: "torch" }))}
+              >
+                To the torch <Icon name="flame" size={15} />
+              </button>
+            </div>
+          )}
+          {stage === "torch" && (
+            <div className="space-y-2">
+              <button
+                className="btn btn-gold w-full inline-flex items-center justify-center gap-1.5 py-3.5 text-base"
+                disabled={!dev}
+                onClick={() =>
+                  run(() => lightTorch({ deviceId: dev! }), "Torch lit — we're live!")
+                }
+              >
+                <Icon name="flame" size={20} /> Light the torch &amp; go live
+              </button>
+              <button
+                className="btn btn-ghost w-full inline-flex items-center justify-center gap-1.5 text-sm"
+                disabled={!dev}
+                onClick={() => run(() => prev({ deviceId: dev! }))}
+              >
+                <Icon name="arrowLeft" size={14} /> Back to anthem
+              </button>
+            </div>
+          )}
+
+          <button
+            className="w-full text-center text-xs text-white/40 underline"
+            disabled={!dev}
+            onClick={() => run(() => reset({ deviceId: dev! }), "Ceremony hidden")}
+          >
+            {stage === "live" ? "Hide ceremony screen" : "End ceremony"}
+          </button>
+        </div>
+      )}
     </section>
   );
 }

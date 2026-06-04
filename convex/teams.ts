@@ -182,6 +182,7 @@ export const update = mutation({
       motto: v.optional(v.string()),
       color: v.optional(v.string()),
       emoji: v.optional(v.string()),
+      walkoutSong: v.optional(v.string()),
     }),
   },
   handler: async (ctx, { deviceId, teamId, patch }) => {

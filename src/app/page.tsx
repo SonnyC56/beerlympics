@@ -220,6 +220,46 @@ function EventHome() {
         </span>
       </Link>
 
+      {/* Pre-game fun: odds + roast cam */}
+      <section className="grid grid-cols-2 gap-3">
+        <Link
+          href="/odds"
+          className="panel-tight flex flex-col gap-1 p-4 transition hover:bg-white/[0.03]"
+        >
+          <span className="text-[var(--color-gold-400)]"><Icon name="target" size={22} /></span>
+          <div className="font-bold text-white">Opening Odds</div>
+          <div className="text-xs text-white/50">
+            {finished ? "See who called the podium." : "Predict the podium before kickoff."}
+          </div>
+        </Link>
+        <Link
+          href="/roast"
+          className="panel-tight flex flex-col gap-1 p-4 transition hover:bg-white/[0.03]"
+        >
+          <span className="text-[var(--color-flame-soft)]"><Icon name="mic" size={22} /></span>
+          <div className="font-bold text-white">Roast Cam</div>
+          <div className="text-xs text-white/50">Record a trash-talk confessional.</div>
+        </Link>
+      </section>
+
+      {/* Host: opening ceremony quick link */}
+      {identity.isHost && !finished && (
+        <Link
+          href="/scoreboard/tv/parade"
+          target="_blank"
+          className="panel-tight flex items-center gap-3 p-4 transition hover:bg-white/[0.03]"
+        >
+          <span className="text-[var(--color-gold-400)]"><Icon name="flag" size={24} /></span>
+          <div className="flex-1">
+            <div className="font-bold text-white">Opening Ceremony — TV screen</div>
+            <div className="text-xs text-white/50">
+              Cast this to the big screen; run the parade from the Host tab.
+            </div>
+          </div>
+          <Icon name="arrowRight" size={14} />
+        </Link>
+      )}
+
       {/* Live podium snapshot */}
       {(live || finished) && standings && standings.teams.length > 0 && (
         <section className="panel p-5">

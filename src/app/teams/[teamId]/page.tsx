@@ -37,6 +37,7 @@ type TeamDetail = {
   color: string;
   theme?: string;
   motto?: string;
+  walkoutSong?: string;
   seed?: number;
   captainUserId: Id<"users">;
   members: Member[];
@@ -477,6 +478,7 @@ function EditTeamSheet({
   const [name, setName] = useState(team.name);
   const [theme, setTheme] = useState(team.theme ?? "");
   const [motto, setMotto] = useState(team.motto ?? "");
+  const [walkoutSong, setWalkoutSong] = useState(team.walkoutSong ?? "");
   const [color, setColor] = useState(team.color);
   const [emoji, setEmoji] = useState(team.emoji);
 
@@ -494,6 +496,7 @@ function EditTeamSheet({
             name: name.trim(),
             theme: theme.trim(),
             motto: motto.trim(),
+            walkoutSong: walkoutSong.trim(),
             color,
             emoji,
           },
@@ -561,6 +564,21 @@ function EditTeamSheet({
             maxLength={48}
             onChange={(e) => setMotto(e.target.value)}
           />
+        </div>
+        <div>
+          <label className="mb-1.5 flex items-center gap-1.5 text-sm font-semibold text-white/70">
+            <Icon name="mic" size={14} /> Walk-out song (optional)
+          </label>
+          <input
+            className="field"
+            placeholder="Eye of the Tiger — Survivor"
+            value={walkoutSong}
+            maxLength={60}
+            onChange={(e) => setWalkoutSong(e.target.value)}
+          />
+          <p className="mt-1 text-[11px] text-white/40">
+            Plays when your team is announced in the opening ceremony.
+          </p>
         </div>
         <div>
           <label className="mb-2 block text-sm font-semibold text-white/70">

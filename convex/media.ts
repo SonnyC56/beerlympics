@@ -25,6 +25,7 @@ export const record = mutation({
     matchId: v.optional(v.id("matches")),
     takenAt: v.optional(v.number()),
     durationMs: v.optional(v.number()),
+    roast: v.optional(v.boolean()), // a Roast Cam confessional
   },
   handler: async (ctx, args) => {
     const event = await getActiveEvent(ctx);
@@ -47,6 +48,7 @@ export const record = mutation({
       gameId,
       matchId: args.matchId,
       caption: args.caption?.trim(),
+      roast: args.roast || undefined,
       takenAt: args.takenAt ?? now,
       durationMs: args.durationMs,
       favorite: false,
@@ -54,10 +56,40 @@ export const record = mutation({
     });
     await recordActivity(ctx, event._id, {
       kind: "media",
-      message: `${user?.name ?? "Someone"} captured a ${args.kind} for the reel`,
+      message: args.roast
+        ? `${user?.name ?? "Someone"} dropped a Roast Cam confessional`
+        : `${user?.name ?? "Someone"} captured a ${args.kind} for the reel`,
       teamId: args.teamId,
     });
     return mediaId;
+  },
+});
+
+/** Roast Cam gallery — trash-talk confessionals, newest first. */
+export const roasts = query({
+  args: { limit: v.optional(v.number()) },
+  handler: async (ctx, { limit }) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) return [];
+    const rows = await ctx.db
+      .query("media")
+      .withIndex("by_event_and_roast", (q) =>
+        q.eq("eventId", event._id).eq("roast", true),
+      )
+      .order("desc")
+      .take(limit ?? 100);
+    return await Promise.all(
+      rows.map(async (m) => {
+        const team = m.teamId ? await ctx.db.get(m.teamId) : null;
+        return {
+          ...m,
+          url: await ctx.storage.getUrl(m.storageId),
+          teamName: team?.name ?? null,
+          teamEmoji: team?.emoji ?? null,
+          teamColor: team?.color ?? null,
+        };
+      }),
+    );
   },
 });
 
