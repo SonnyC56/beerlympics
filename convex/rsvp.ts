@@ -48,6 +48,10 @@ export const respond = mutation({
     const emoji = args.emoji || user.emoji || "beer";
     await ctx.db.patch(user._id, { name, emoji, lastSeenAt: now });
 
+    // Normalize the attribution code so it matches the invite's stored code
+    // (invites are uppercased) regardless of the casing used in the link URL.
+    const invitedViaCode = args.invitedViaCode?.trim().toUpperCase() || undefined;
+
     const existing = await ctx.db
       .query("players")
       .withIndex("by_event_and_user", (q) =>
@@ -66,7 +70,7 @@ export const respond = mutation({
         plusOnes: Math.max(0, args.plusOnes ?? existing.plusOnes ?? 0),
         note: args.note ?? existing.note,
         email: args.email ?? existing.email,
-        invitedViaCode: args.invitedViaCode ?? existing.invitedViaCode,
+        invitedViaCode: invitedViaCode ?? existing.invitedViaCode,
         respondedAt: now,
       });
     } else {
@@ -79,7 +83,7 @@ export const respond = mutation({
         plusOnes: Math.max(0, args.plusOnes ?? 0),
         note: args.note,
         email: args.email,
-        invitedViaCode: args.invitedViaCode,
+        invitedViaCode,
         respondedAt: now,
       });
     }
