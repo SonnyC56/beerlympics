@@ -9,6 +9,7 @@ import { EmptyState, Spinner } from "@/components/primitives";
 import { Icon, Mascot, type IconName } from "@/components/Icon";
 import { formatEventDate } from "@/lib/format";
 import { RsvpForm, GuestAvatar } from "@/components/RsvpForm";
+import { VenueMap } from "@/components/VenueMap";
 
 type Guest = {
   _id: Id<"players">;
@@ -73,6 +74,15 @@ export default function RsvpPage() {
     <div className="space-y-5">
       <EventHero event={event} />
 
+      {event.location && (
+        <VenueMap
+          location={event.location}
+          lat={event.lat}
+          lng={event.lng}
+          locationUrl={event.locationUrl}
+        />
+      )}
+
       {/* Only mount the form once we know the caller's existing RSVP, so it
           pre-fills correctly instead of flashing an empty state. */}
       {existing === undefined ? (
@@ -95,6 +105,8 @@ type EventDoc = {
   startTime?: string;
   location?: string;
   locationUrl?: string;
+  lat?: number;
+  lng?: number;
   coverEmoji: string;
   status: "draft" | "rsvp" | "live" | "finished";
 };
