@@ -52,8 +52,27 @@ export type Countdown = {
   totalMs: number;
 };
 
+/**
+ * Returns the offset in ms (tz - UTC) for a given IANA time zone at an instant.
+ * e.g. America/New_York in summer (EDT) → -4h, in winter (EST) → -5h.
+ */
+function tzOffsetMs(timeZone: string, atMs: number): number {
+  const d = new Date(atMs);
+  const utc = new Date(d.toLocaleString("en-US", { timeZone: "UTC" }));
+  const tz = new Date(d.toLocaleString("en-US", { timeZone }));
+  return tz.getTime() - utc.getTime();
+}
+
+/** The fixed instant (ms) when the games kick off: 1:00 PM Eastern on `dateIso`. */
+export function kickoffMs(dateIso: string): number {
+  // Interpret 13:00 as if it were UTC, then correct by the Eastern offset so the
+  // result is the same real moment for every viewer regardless of their timezone.
+  const asUtc = new Date(dateIso + "T13:00:00Z").getTime();
+  return asUtc - tzOffsetMs("America/New_York", asUtc);
+}
+
 export function countdownTo(dateIso: string, fromMs: number): Countdown {
-  const target = new Date(dateIso + "T12:00:00").getTime();
+  const target = kickoffMs(dateIso);
   const diff = target - fromMs;
   const isPast = diff <= 0;
   const abs = Math.abs(diff);
