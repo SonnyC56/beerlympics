@@ -30,10 +30,10 @@ export const claim = mutation({
       .withIndex("by_code", (q) => q.eq("code", code.toUpperCase()))
       .unique();
     if (!invite) return false;
-    await ctx.db.patch(invite._id, {
-      uses: invite.uses + 1,
-      lastClaimedAt: Date.now(),
-    });
+    // Note when the link was last opened, but DON'T count an open as a "use".
+    // Uses now reflects actual sign-ups (see `list` below), so simply opening
+    // — or re-opening — the link no longer inflates the count.
+    await ctx.db.patch(invite._id, { lastClaimedAt: Date.now() });
     return true;
   },
 });
@@ -49,7 +49,29 @@ export const list = query({
       .query("invites")
       .withIndex("by_event", (q) => q.eq("eventId", event._id))
       .collect();
-    return invites.sort((a, b) => b.createdAt - a.createdAt);
+
+    // "uses" = how many people actually signed up through each link. We derive
+    // it from the players who RSVP'd with that invite's code, rather than from a
+    // counter bumped on every page open (which over-counted re-opens and people
+    // who opened the link but never RSVP'd). Codes are normalized to uppercase
+    // on both sides so attribution matches regardless of link casing.
+    const players = await ctx.db
+      .query("players")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    const signupsByCode = new Map<string, number>();
+    for (const p of players) {
+      if (!p.invitedViaCode) continue;
+      const key = p.invitedViaCode.toUpperCase();
+      signupsByCode.set(key, (signupsByCode.get(key) ?? 0) + 1);
+    }
+
+    return invites
+      .map((inv) => ({
+        ...inv,
+        uses: signupsByCode.get(inv.code.toUpperCase()) ?? 0,
+      }))
+      .sort((a, b) => b.createdAt - a.createdAt);
   },
 });
 

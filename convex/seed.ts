@@ -60,7 +60,11 @@ export const run = mutation({
         "Drinking games and lawn games. One champion. Cycle through the stations, climb the live leaderboard, and earn your way into the Beer Die finale.",
       dateIso,
       startTime: "12:00 PM",
-      location: "The Backyard",
+      location: "74 Clinton Street, Whitesboro, NY 13492",
+      locationUrl:
+        "https://www.openstreetmap.org/?mlat=43.1191049&mlon=-75.2962511#map=18/43.1191049/-75.2962511",
+      lat: 43.1191049,
+      lng: -75.2962511,
       coverEmoji: "trophy",
       coverColor: "gold",
       hostCode: "HOST",
@@ -162,6 +166,15 @@ export const resync = mutation({
     // Migrate the cover from an emoji to a mascot key.
     if (event.coverEmoji === "🏅" || event.coverEmoji === "medalGold") {
       eventPatch.coverEmoji = "trophy";
+    }
+    // Set the real venue (with coordinates for the satellite map) — only if
+    // still on a placeholder so we don't clobber a host's edit.
+    if (!event.location || event.location === "The Backyard") {
+      eventPatch.location = "74 Clinton Street, Whitesboro, NY 13492";
+      eventPatch.locationUrl =
+        "https://www.openstreetmap.org/?mlat=43.1191049&mlon=-75.2962511#map=18/43.1191049/-75.2962511";
+      eventPatch.lat = 43.1191049;
+      eventPatch.lng = -75.2962511;
     }
 
     // 2) Migrate scoring multipliers into the two-category world.
@@ -309,6 +322,33 @@ export const resync = mutation({
       wheelsMigrated,
       message: `Resynced ${updated} games, added ${added} new (+${stationsAdded} stations), removed ${removed}, migrated ${wheelsMigrated} wheel(s).`,
     };
+  },
+});
+
+/**
+ * Set the event venue + coordinates (powers the satellite map). Run with
+ * `npx convex run seed:setVenue` to apply it to an already-seeded event without
+ * touching anything else. Defaults to 74 Clinton Street, Whitesboro, NY.
+ */
+export const setVenue = mutation({
+  args: {
+    location: v.optional(v.string()),
+    lat: v.optional(v.number()),
+    lng: v.optional(v.number()),
+  },
+  handler: async (ctx, args) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event yet — run seed:run first.");
+    const location = args.location ?? "74 Clinton Street, Whitesboro, NY 13492";
+    const lat = args.lat ?? 43.1191049;
+    const lng = args.lng ?? -75.2962511;
+    await ctx.db.patch(event._id, {
+      location,
+      lat,
+      lng,
+      locationUrl: `https://www.openstreetmap.org/?mlat=${lat}&mlon=${lng}#map=18/${lat}/${lng}`,
+    });
+    return { ok: true, location, lat, lng };
   },
 });
 

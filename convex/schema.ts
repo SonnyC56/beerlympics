@@ -42,6 +42,10 @@ export default defineSchema({
     startTime: v.optional(v.string()), // human time, e.g. "12:00 PM"
     location: v.optional(v.string()),
     locationUrl: v.optional(v.string()), // maps link
+    // Venue coordinates, used to render a satellite map of the spot. Optional so
+    // existing events stay valid; the map falls back to geocoding `location`.
+    lat: v.optional(v.number()),
+    lng: v.optional(v.number()),
     coverEmoji: v.string(),
     coverColor: v.string(), // theme accent token
     hostCode: v.string(), // secret; entering it grants host powers

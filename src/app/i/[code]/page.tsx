@@ -10,6 +10,7 @@ import { EmptyState, Spinner } from "@/components/primitives";
 import { Icon, Mascot } from "@/components/Icon";
 import { formatEventDate } from "@/lib/format";
 import { RsvpForm } from "@/components/RsvpForm";
+import { VenueMap } from "@/components/VenueMap";
 
 export default function InvitePage() {
   const { code } = useParams<{ code: string }>();
@@ -130,6 +131,16 @@ export default function InvitePage() {
           </div>
         </div>
       </section>
+
+      {/* Where it's going down */}
+      {event.location && (
+        <VenueMap
+          location={event.location}
+          lat={event.lat}
+          lng={event.lng}
+          locationUrl={event.locationUrl}
+        />
+      )}
 
       {/* Host's personal note */}
       {hostNote && (

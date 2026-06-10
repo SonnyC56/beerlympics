@@ -12,6 +12,7 @@ import {
   useNow,
 } from "@/components/primitives";
 import { Icon, type IconName, Mascot, Medal } from "@/components/Icon";
+import { VenueMap } from "@/components/VenueMap";
 import {
   activityIcon,
   countdownTo,
@@ -199,6 +200,16 @@ function EventHome() {
           )}
         </div>
       </section>
+
+      {/* Where it's going down */}
+      {event.location && (
+        <VenueMap
+          location={event.location}
+          lat={event.lat}
+          lng={event.lng}
+          locationUrl={event.locationUrl}
+        />
+      )}
 
       {/* Primary CTA */}
       <CtaBlock status={event.status} mine={mine} />
