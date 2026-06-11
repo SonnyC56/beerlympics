@@ -17,6 +17,7 @@ type LineupTeam = {
   motto?: string;
   seed?: number;
   walkoutSong?: string;
+  flagUrl?: string | null;
   roastUrl?: string | null;
 };
 
@@ -163,7 +164,7 @@ function ParadeReveal({
           {champ && <span className="ml-2 text-[var(--color-gold-300)]">·</span>}
         </div>
 
-        {/* roast clip if present, else a giant mascot */}
+        {/* roast clip if present, else the team flag, else a giant mascot */}
         {team.roastUrl ? (
           <video
             src={team.roastUrl}
@@ -172,6 +173,13 @@ function ParadeReveal({
             loop
             playsInline
             className="mt-[2vh] max-h-[34vh] rounded-3xl border-2 object-contain shadow-2xl"
+            style={{ borderColor: `${hex}88`, boxShadow: `0 0 60px ${hex}55` }}
+          />
+        ) : team.flagUrl ? (
+          <img
+            src={team.flagUrl}
+            alt={`${team.name} flag`}
+            className="mt-[2vh] max-h-[34vh] rounded-3xl border-2 object-contain shadow-2xl animate-rise"
             style={{ borderColor: `${hex}88`, boxShadow: `0 0 60px ${hex}55` }}
           />
         ) : (
@@ -248,9 +256,18 @@ function AnthemWall({ name, lineup }: { name: string; lineup: LineupTeam[] }) {
                   animationDelay: `${Math.min(i * 90, 700)}ms`,
                 }}
               >
-                <div className="animate-float" style={{ color: hex }}>
-                  <Mascot name={t.emoji} size={64} className="h-[8vh] w-[8vh]" />
-                </div>
+                {t.flagUrl ? (
+                  <img
+                    src={t.flagUrl}
+                    alt={`${t.name} flag`}
+                    className="h-[8vh] w-[12vh] rounded-xl object-cover animate-float"
+                    style={{ border: `1px solid ${hex}66` }}
+                  />
+                ) : (
+                  <div className="animate-float" style={{ color: hex }}>
+                    <Mascot name={t.emoji} size={64} className="h-[8vh] w-[8vh]" />
+                  </div>
+                )}
                 <div
                   className="truncate text-center font-display text-[2.6vh] leading-tight"
                   style={{ color: hex }}

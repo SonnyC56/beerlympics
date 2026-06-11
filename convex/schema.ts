@@ -159,6 +159,7 @@ export default defineSchema({
     motto: v.optional(v.string()),
     color: v.string(), // hex or theme token used across the UI
     emoji: v.string(),
+    flagStorageId: v.optional(v.id("_storage")), // custom flag image (parade + anthem wall)
     walkoutSong: v.optional(v.string()), // played during the opening parade
     captainUserId: v.id("users"),
     seed: v.optional(v.number()), // overall seed for bracket placement

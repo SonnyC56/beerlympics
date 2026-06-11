@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -307,14 +307,53 @@ function TeamFormSheet({
   const run = useAction();
   const create = useMutation(api.teams.create);
   const update = useMutation(api.teams.update);
+  const genFlagUrl = useMutation(api.teams.generateFlagUploadUrl);
+  const setFlag = useMutation(api.teams.setFlag);
+  const clearFlag = useMutation(api.teams.clearFlag);
 
   const [name, setName] = useState(team?.name ?? "");
   const [theme, setTheme] = useState(team?.theme ?? "");
   const [motto, setMotto] = useState(team?.motto ?? "");
   const [color, setColor] = useState(team?.color ?? COLOR_TOKENS[0]);
   const [emoji, setEmoji] = useState(team?.emoji ?? "lion");
+  const [flagUrl, setFlagUrl] = useState<string | null>(team?.flagUrl ?? null);
+  const [flagBusy, setFlagBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const valid = name.trim().length > 0;
+
+  async function uploadFlag(file: File) {
+    if (!identity.deviceId || !team) return;
+    setFlagBusy(true);
+    await run(async () => {
+      const url = await genFlagUrl({ deviceId: identity.deviceId! });
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!res.ok) throw new Error("Upload failed — try a smaller image.");
+      const { storageId } = (await res.json()) as { storageId: string };
+      await setFlag({
+        deviceId: identity.deviceId!,
+        teamId: team._id,
+        storageId: storageId as Id<"_storage">,
+      });
+      setFlagUrl(URL.createObjectURL(file));
+    }, "Flag uploaded!");
+    setFlagBusy(false);
+  }
+
+  async function removeFlag() {
+    if (!identity.deviceId || !team) return;
+    setFlagBusy(true);
+    const ok = await run(
+      () => clearFlag({ deviceId: identity.deviceId!, teamId: team._id }),
+      "Flag removed.",
+    );
+    if (ok) setFlagUrl(null);
+    setFlagBusy(false);
+  }
 
   async function submit() {
     if (!identity.deviceId || !valid) return;
@@ -362,13 +401,17 @@ function TeamFormSheet({
         {/* Live preview */}
         <div className="flex items-center gap-3 rounded-2xl bg-white/4 p-3">
           <span
-            className="flex h-12 w-12 items-center justify-center rounded-xl"
+            className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl"
             style={{
               background: `${colorHex(color)}1f`,
               border: `1px solid ${colorHex(color)}66`,
             }}
           >
-            <Mascot name={emoji} size={26} />
+            {flagUrl ? (
+              <img src={flagUrl} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <Mascot name={emoji} size={26} />
+            )}
           </span>
           <div className="min-w-0">
             <div className="truncate font-display text-xl text-white">
@@ -423,6 +466,77 @@ function TeamFormSheet({
         <FormField label="Team mascot">
           <EmojiPicker value={emoji} onChange={setEmoji} />
         </FormField>
+
+        {mode === "edit" && team ? (
+          <FormField label="Team flag (optional)">
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) void uploadFlag(f);
+                e.target.value = "";
+              }}
+            />
+            <div className="flex items-center gap-3">
+              <span
+                className="flex h-16 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl"
+                style={{
+                  background: `${colorHex(color)}1f`,
+                  border: `1px solid ${colorHex(color)}55`,
+                }}
+              >
+                {flagUrl ? (
+                  <img
+                    src={flagUrl}
+                    alt="Team flag"
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <Mascot name={emoji} size={28} />
+                )}
+              </span>
+              <div className="flex flex-1 flex-col gap-2">
+                <button
+                  type="button"
+                  className="btn btn-ghost py-2 text-sm"
+                  disabled={flagBusy || !identity.deviceId}
+                  onClick={() => fileRef.current?.click()}
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Icon name="camera" size={14} />
+                    {flagBusy
+                      ? "Uploading…"
+                      : flagUrl
+                        ? "Replace flag"
+                        : "Upload a flag"}
+                  </span>
+                </button>
+                {flagUrl && (
+                  <button
+                    type="button"
+                    className="text-xs text-[var(--color-loss)] underline disabled:opacity-50"
+                    disabled={flagBusy}
+                    onClick={removeFlag}
+                  >
+                    Remove flag
+                  </button>
+                )}
+              </div>
+            </div>
+            <p className="mt-1.5 text-xs text-white/45">
+              Shown instead of your mascot in the opening ceremony — the parade and
+              the anthem flag wall.
+            </p>
+          </FormField>
+        ) : (
+          <p className="text-xs text-white/40">
+            Want a custom flag image? Create your team first, then tap Edit to upload
+            one for the opening ceremony.
+          </p>
+        )}
 
         <button
           className="btn btn-gold w-full"

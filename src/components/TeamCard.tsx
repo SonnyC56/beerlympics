@@ -22,6 +22,7 @@ export type TeamCardTeam = {
   theme?: string;
   motto?: string;
   seed?: number;
+  flagUrl?: string | null;
   members: TeamCardMember[];
 };
 
@@ -82,10 +83,18 @@ export function TeamCard({
       <Link href={`/teams/${team._id}`} className="block px-5 pb-4 pt-5">
         <div className="flex items-start gap-3">
           <span
-            className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl"
+            className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl"
             style={{ background: `${hex}1f`, border: `1px solid ${hex}66` }}
           >
-            <Mascot name={team.emoji} size={30} />
+            {team.flagUrl ? (
+              <img
+                src={team.flagUrl}
+                alt={`${team.name} flag`}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <Mascot name={team.emoji} size={30} />
+            )}
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">

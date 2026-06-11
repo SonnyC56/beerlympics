@@ -57,6 +57,9 @@ export const get = query({
           motto: t.motto,
           seed: t.seed,
           walkoutSong: t.walkoutSong,
+          flagUrl: t.flagStorageId
+            ? await ctx.storage.getUrl(t.flagStorageId)
+            : null,
           roastUrl: clip ? await ctx.storage.getUrl(clip.storageId) : null,
         };
       }),

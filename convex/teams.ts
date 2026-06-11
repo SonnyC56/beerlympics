@@ -33,6 +33,9 @@ export const list = query({
         const members = await membersOf(ctx, team._id);
         return {
           ...team,
+          flagUrl: team.flagStorageId
+            ? await ctx.storage.getUrl(team.flagStorageId)
+            : null,
           members: members.map((m) => ({
             _id: m._id,
             userId: m.userId,
@@ -56,6 +59,9 @@ export const get = query({
     const members = await membersOf(ctx, teamId);
     return {
       ...team,
+      flagUrl: team.flagStorageId
+        ? await ctx.storage.getUrl(team.flagStorageId)
+        : null,
       members: members.map((m) => ({
         _id: m._id,
         userId: m.userId,
@@ -213,6 +219,54 @@ export const update = mutation({
       Object.entries(patch).filter(([, val]) => val !== undefined && val !== ""),
     );
     await ctx.db.patch(teamId, clean);
+    return true;
+  },
+});
+
+/** Captain (or host): step 1 of a flag upload — a short-lived URL to POST to. */
+export const generateFlagUploadUrl = mutation({
+  args: { deviceId: v.string() },
+  handler: async (ctx, { deviceId }) => {
+    await requireUser(ctx, deviceId); // any signed-in user; setFlag enforces ownership
+    return await ctx.storage.generateUploadUrl();
+  },
+});
+
+/** Captain (or host): step 2 — attach the uploaded flag image to the team. */
+export const setFlag = mutation({
+  args: {
+    deviceId: v.string(),
+    teamId: v.id("teams"),
+    storageId: v.id("_storage"),
+  },
+  handler: async (ctx, { deviceId, teamId, storageId }) => {
+    const user = await requireUser(ctx, deviceId);
+    const team = await ctx.db.get(teamId);
+    if (!team) throw new Error("Team not found.");
+    if (team.captainUserId !== user._id && !user.isHost) {
+      throw new Error("Only the captain or host can set the team flag.");
+    }
+    // Replace the previous flag; free its storage so it doesn't leak.
+    if (team.flagStorageId && team.flagStorageId !== storageId) {
+      await ctx.storage.delete(team.flagStorageId);
+    }
+    await ctx.db.patch(teamId, { flagStorageId: storageId });
+    return true;
+  },
+});
+
+/** Captain (or host): remove the team flag (back to the mascot). */
+export const clearFlag = mutation({
+  args: { deviceId: v.string(), teamId: v.id("teams") },
+  handler: async (ctx, { deviceId, teamId }) => {
+    const user = await requireUser(ctx, deviceId);
+    const team = await ctx.db.get(teamId);
+    if (!team) throw new Error("Team not found.");
+    if (team.captainUserId !== user._id && !user.isHost) {
+      throw new Error("Only the captain or host can change the team flag.");
+    }
+    if (team.flagStorageId) await ctx.storage.delete(team.flagStorageId);
+    await ctx.db.patch(teamId, { flagStorageId: undefined });
     return true;
   },
 });
