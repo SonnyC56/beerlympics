@@ -132,6 +132,13 @@ export default function ScoreboardTvPage() {
             <div className="text-[2.4vh] text-white/40">
               Scores appear here the moment a match wraps.
             </div>
+            <div className="mt-[1vh] inline-flex items-center gap-3 rounded-full border border-white/12 bg-black/30 px-[2.5vw] py-[1.6vh] text-[2.4vh] text-white/80">
+              <Icon name="circuit" size={26} className="text-[var(--color-gold-300)]" />
+              Play along on your phone at{" "}
+              <span className="font-bold text-[var(--color-gold-300)]">
+                beerlympics.io
+              </span>
+            </div>
           </div>
         )}
       </main>

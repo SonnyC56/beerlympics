@@ -70,6 +70,11 @@ export default function QuipsPage() {
       {/* ── Answer phase ── */}
       {q.phase === "answer" && (
         <div className="space-y-3">
+          <p className="panel-tight flex items-center gap-2 p-3 text-sm text-white/60">
+            <Icon name="eye" size={16} className="shrink-0 text-[var(--color-gold-300)]" />
+            Answers stay anonymous and hidden until the host opens voting. Make it
+            count.
+          </p>
           <textarea
             className="field min-h-[96px] resize-none"
             placeholder="Write the funniest answer you can…"
@@ -152,7 +157,11 @@ export default function QuipsPage() {
       {/* ── Reveal phase ── */}
       {q.phase === "reveal" && (
         <div className="space-y-2.5">
-          <p className="text-center text-sm text-white/60">The results are in!</p>
+          <p className="text-center text-sm text-white/60">
+            The results are in! Winner&apos;s team banks{" "}
+            <span className="font-bold text-[var(--color-gold-300)]">+15</span>.
+            Stay on this screen — the host may fire up another round.
+          </p>
           {(q.results ?? []).map((r, i) => (
             <div
               key={r._id}

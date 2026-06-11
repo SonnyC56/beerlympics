@@ -17,6 +17,14 @@ type TeamLite = { _id: Id<"teams">; name: string; emoji: string; color: string }
 export function HostExtras() {
   return (
     <div className="space-y-5">
+      <header className="rounded-2xl border border-white/8 bg-white/4 p-4">
+        <h2 className="font-display text-lg text-white">Crowd-pleasers</h2>
+        <p className="mt-1 text-xs leading-relaxed text-white/55">
+          Fire these whenever the moment calls for it — they run alongside the
+          games, not in any set order. Each one casts to the TV and lights up
+          everyone&apos;s phone.
+        </p>
+      </header>
       <DrinkSiren />
       <HostQuips />
       <Bounties />
@@ -56,6 +64,10 @@ function Bounties() {
   return (
     <section className="panel p-5">
       <HostSectionTitle icon="target" title="Side Quests" />
+      <p className="mb-3 text-sm text-white/55">
+        Post bonus-point dares that run all day (first keg stand, best costume…).
+        Teams claim them from their phones; you award the points to the winner.
+      </p>
 
       {/* create */}
       <div className="space-y-2.5 rounded-2xl border border-white/8 bg-white/4 p-3.5">
@@ -261,6 +273,11 @@ function PollControl() {
           </Link>
         }
       />
+      <p className="mb-3 text-sm text-white/55">
+        Late in the day, open voting so guests can crown the day&apos;s MVP from
+        their phones. Reveal the winner on the TV — it also rides along on the
+        Champion Podium screen.
+      </p>
       {!poll ? (
         <Spinner />
       ) : (

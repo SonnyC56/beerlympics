@@ -108,6 +108,12 @@ export default function BountiesPage() {
                     ) : (
                       <p className="mt-3 text-xs text-white/40">Join a team to claim bounties.</p>
                     )}
+                    {myTeamId && claimed && (
+                      <p className="mt-2 flex items-center gap-1.5 text-xs text-white/45">
+                        <Icon name="clock" size={13} className="shrink-0 text-[var(--color-gold-300)]" />
+                        Flagged for the host — points land once they confirm it.
+                      </p>
+                    )}
                   </div>
                 );
               })}

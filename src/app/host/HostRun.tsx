@@ -59,8 +59,6 @@ export function HostRun() {
     <div className="space-y-5">
       <StatusControl status={event.status} />
 
-      <DrinkSiren />
-
       <CeremonyControl />
 
       {stats && (
@@ -71,6 +69,8 @@ export function HostRun() {
           <HostStat icon="beers" label="Heads" value={stats.headcount} />
         </section>
       )}
+
+      <DrinkSiren />
 
       <PhaseControl phases={phases} currentPhaseIndex={event.currentPhaseIndex} />
 
@@ -321,6 +321,11 @@ function PhaseControl({
   return (
     <section className="panel p-5">
       <HostSectionTitle icon="compass" title="Phases" />
+      <p className="mb-3 text-sm text-white/55">
+        Work down the list one phase at a time. Hitting{" "}
+        <span className="text-white/70">Start</span> auto-builds that phase&apos;s
+        brackets — then drop to Dispatch below to seat the matches.
+      </p>
       {phases === undefined ? (
         <Spinner />
       ) : phases.length === 0 ? (

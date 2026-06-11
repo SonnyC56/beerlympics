@@ -55,6 +55,14 @@ export default function HostPage() {
         <p className="mt-1 text-sm text-white/50">
           Drive the whole day — status, brackets, scoring, the works.
         </p>
+        <p className="mt-2 rounded-2xl border border-white/8 bg-white/4 px-3.5 py-2.5 text-xs leading-relaxed text-white/55">
+          <span className="font-bold text-white/70">Day-of game plan:</span> set
+          status to <span className="text-[var(--color-gold-300)]">Live</span>,
+          run the Opening Ceremony, then Start a phase and Dispatch the matches.
+          Repeat through the phases, and finish by crowning the Champion Podium.
+          The <span className="text-[var(--color-gold-300)]">Run</span> tab below
+          walks you through it top to bottom.
+        </p>
       </header>
 
       {/* Tab nav */}

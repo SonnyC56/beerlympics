@@ -94,7 +94,7 @@ export function HostQuips() {
           </p>
           <textarea
             className="field min-h-[64px] resize-none"
-            placeholder="Type a prompt, or shuffle one in →"
+            placeholder="Type a prompt, or shuffle one in"
             value={prompt}
             maxLength={120}
             onChange={(e) => setPrompt(e.target.value)}
@@ -151,7 +151,7 @@ export function HostQuips() {
                   run(() => setPhase({ deviceId: dev!, phase: "vote" }), "Voting is open!")
                 }
               >
-                Close answers → open voting
+                Close answers, open voting
               </button>
             )}
             {q.phase === "vote" && (
@@ -162,7 +162,7 @@ export function HostQuips() {
                   run(() => setPhase({ deviceId: dev!, phase: "reveal" }), "Revealed!")
                 }
               >
-                Close voting → reveal winner
+                Close voting, reveal winner
               </button>
             )}
             {q.phase === "reveal" && (

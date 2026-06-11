@@ -96,8 +96,13 @@ export default function QuipsTvPage() {
       <Stage>
         <div className="flex w-full flex-col items-center text-center">
           <Prompt text={q.prompt ?? ""} />
-          <div className="mt-[3vh] text-[2.6vh] font-bold uppercase tracking-widest text-[var(--color-live)]">
-            Vote on your phone · {q.totalVotes ?? 0} in
+          <div className="mt-[3vh] flex flex-col items-center gap-[1vh]">
+            <div className="text-[2.6vh] font-bold uppercase tracking-widest text-[var(--color-live)]">
+              Vote on your phone · {q.totalVotes ?? 0} in
+            </div>
+            <Link href="/quips" className="text-[2.2vh] font-bold text-[var(--color-gold-300)]">
+              beerlympics.io/quips
+            </Link>
           </div>
           <div
             className="mt-[3vh] grid w-full gap-[1.5vw]"
