@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import {
   assertHost,
@@ -16,10 +16,16 @@ const DEFAULT_SETTINGS = {
   maxTeamSize: 3, // pair + optional sub
 };
 
-/** The active event (or null before setup). */
+/** The active event (or null before setup). The secret `hostCode` is stripped —
+ * it must never reach the client. Hosts read it via `getHostCode` (gated). */
 export const get = query({
   args: {},
-  handler: async (ctx) => getActiveEvent(ctx),
+  handler: async (ctx) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) return null;
+    const { hostCode: _hostCode, ...safe } = event;
+    return safe;
+  },
 });
 
 /** Headline stats for the landing / dashboard. */
@@ -197,5 +203,29 @@ export const getHostCode = query({
     if (!user?.isHost) return null;
     const event = await getActiveEvent(ctx);
     return event?.hostCode ?? null;
+  },
+});
+
+/**
+ * Admin-only (CLI/dashboard) fixups that aren't exposed to the client. Used to
+ * rotate the host code off a guessable value and to align display fields.
+ * Returns how many users currently hold host so we never strand the event.
+ */
+export const adminPatch = internalMutation({
+  args: {
+    hostCode: v.optional(v.string()),
+    startTime: v.optional(v.string()),
+  },
+  handler: async (ctx, { hostCode, startTime }) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const patch: Record<string, string> = {};
+    if (hostCode != null) patch.hostCode = hostCode.trim().toUpperCase();
+    if (startTime != null) patch.startTime = startTime.trim();
+    if (Object.keys(patch).length > 0) await ctx.db.patch(event._id, patch);
+    const hosts = (
+      await ctx.db.query("users").collect()
+    ).filter((u) => u.isHost).length;
+    return { ok: true, hostsWithAccess: hosts, patched: Object.keys(patch) };
   },
 });

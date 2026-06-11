@@ -62,8 +62,11 @@ export const reportResult = mutation({
     }
     const user = await requireUser(ctx, args.deviceId);
 
-    // Permission: host always; players only if self-claim is allowed and they
-    // are in the match.
+    // Permission: host always; players only if self-claim is allowed, they are
+    // in the match, and the match is actually being played. Restricting players
+    // to in-progress matches stops anyone from closing out a match that hasn't
+    // been seated yet (e.g. a knockout whose opponent isn't even decided),
+    // which would prematurely advance their team and corrupt the bracket.
     if (!user.isHost) {
       if (!event.settings.allowSelfClaim) {
         throw new Error("Only the host can enter results.");
@@ -76,6 +79,9 @@ export const reportResult = mutation({
         .unique();
       const onTeam = player?.teamId && match.teamIds.includes(player.teamId);
       if (!onTeam) throw new Error("You can only score your own matches.");
+      if (match.status !== "in_progress") {
+        throw new Error("That match isn't in progress yet.");
+      }
     }
 
     // Normalize rankings.
@@ -86,6 +92,15 @@ export const reportResult = mutation({
         teamId,
         place: teamId === args.winnerTeamId ? 1 : 2,
       }));
+    } else {
+      // Explicit rankings (heats) must cover exactly the match's teams, with no
+      // duplicates — partial rankings skew the points math in computePlacements.
+      const ids = new Set(rankings.map((r) => r.teamId as string));
+      const valid =
+        rankings.length === match.teamIds.length &&
+        ids.size === rankings.length &&
+        match.teamIds.every((t) => ids.has(t as string));
+      if (!valid) throw new Error("Rank every team in the match exactly once.");
     }
     rankings = [...rankings].sort((a, b) => a.place - b.place);
     const winnerTeamId = args.winnerTeamId ?? rankings[0]?.teamId;

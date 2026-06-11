@@ -1,6 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
-import { getActiveEvent } from "./lib";
+import { genCode, getActiveEvent } from "./lib";
 import { GAME_CATALOG, DEFAULT_WHEEL_SPOTS } from "./gameCatalog";
 import type { Id } from "./_generated/dataModel";
 
@@ -52,6 +52,9 @@ export const run = mutation({
       return { ok: false, message: "An event already exists — nothing to seed." };
     }
     const dateIso = args.dateIso ?? "2026-06-13";
+    // A fresh, non-guessable host code each seed (entering it grants host powers,
+    // including factory reset — never ship a known default like "HOST").
+    const hostCode = genCode(6);
     const eventId = await ctx.db.insert("events", {
       slug: "iv",
       name: args.name ?? "Sonny's 4th Annual Beer Olympics",
@@ -59,11 +62,11 @@ export const run = mutation({
       description:
         "Drinking games and lawn games. One champion. Cycle through the stations, climb the live leaderboard, and earn your way into the Beer Die finale.",
       dateIso,
-      startTime: "12:00 PM",
+      startTime: "1:00 PM",
       location: "The Backyard",
       coverEmoji: "trophy",
       coverColor: "gold",
-      hostCode: "HOST",
+      hostCode,
       status: "rsvp",
       currentPhaseIndex: -1,
       settings: DEFAULT_SETTINGS,
@@ -124,8 +127,8 @@ export const run = mutation({
     return {
       ok: true,
       eventId,
-      hostCode: "HOST",
-      message: "Seeded! Host code is HOST — change it in the schema/host tools.",
+      hostCode,
+      message: `Seeded! Host code is ${hostCode} — keep it secret; it grants host powers.`,
     };
   },
 });

@@ -223,7 +223,25 @@ export const removeMember = mutation({
   handler: async (ctx, { deviceId, playerId }) => {
     await assertHost(ctx, deviceId);
     const player = await ctx.db.get(playerId);
-    if (player) await ctx.db.patch(playerId, { teamId: undefined, role: undefined });
+    if (!player) return true;
+    const teamId = player.teamId;
+    const wasCaptain = player.role === "captain";
+    await ctx.db.patch(playerId, { teamId: undefined, role: undefined });
+
+    // Don't orphan captaincy: if the kicked player was captain, promote the
+    // earliest-joined survivor (or delete the team if it's now empty), mirroring
+    // `leave`. Otherwise the team has no captain and only the host can edit it.
+    if (teamId && wasCaptain) {
+      const team = await ctx.db.get(teamId);
+      const remaining = await membersOf(ctx, teamId);
+      if (remaining.length === 0) {
+        if (team) await ctx.db.delete(teamId);
+      } else if (team && team.captainUserId === player.userId) {
+        const next = remaining.sort((a, b) => a.respondedAt - b.respondedAt)[0];
+        await ctx.db.patch(team._id, { captainUserId: next.userId });
+        await ctx.db.patch(next._id, { role: "captain" });
+      }
+    }
     return true;
   },
 });
