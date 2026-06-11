@@ -29,6 +29,7 @@ import type * as poll from "../poll.js";
 import type * as predictions from "../predictions.js";
 import type * as push from "../push.js";
 import type * as pushSender from "../pushSender.js";
+import type * as quips from "../quips.js";
 import type * as rsvp from "../rsvp.js";
 import type * as scoring from "../scoring.js";
 import type * as seed from "../seed.js";
@@ -67,6 +68,7 @@ declare const fullApi: ApiFromModules<{
   predictions: typeof predictions;
   push: typeof push;
   pushSender: typeof pushSender;
+  quips: typeof quips;
   rsvp: typeof rsvp;
   scoring: typeof scoring;
   seed: typeof seed;

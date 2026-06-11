@@ -116,6 +116,7 @@ function EventHome() {
     identity.deviceId ? { deviceId: identity.deviceId } : {},
   );
   const standings = useQuery(api.scoring.standings, {});
+  const quip = useQuery(api.quips.current, {}) as { phase: string } | undefined;
   const now = useNow(1000);
 
   if (!event) return <Spinner />;
@@ -219,6 +220,29 @@ function EventHome() {
           Open <Icon name="arrowRight" size={14} />
         </span>
       </Link>
+
+      {/* Live quip battle — jump in */}
+      {quip && quip.phase !== "idle" && (
+        <Link
+          href="/quips"
+          className="panel flex items-center gap-3 border-[var(--color-gold-500)]/50 bg-[var(--color-gold-500)]/10 p-4 transition hover:bg-[var(--color-gold-500)]/15"
+        >
+          <span className="text-[var(--color-gold-300)]"><Icon name="sparkle" size={26} /></span>
+          <div className="flex-1">
+            <div className="font-bold text-white">Quip Battle is live!</div>
+            <div className="text-xs text-white/60">
+              {quip.phase === "answer"
+                ? "Write your answer now."
+                : quip.phase === "vote"
+                  ? "Vote for the funniest answer."
+                  : "See who won."}
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1 text-sm font-bold text-[var(--color-gold-300)]">
+            Play <Icon name="arrowRight" size={14} />
+          </span>
+        </Link>
+      )}
 
       {/* Pre-game fun: odds + roast cam */}
       <section className="grid grid-cols-2 gap-3">

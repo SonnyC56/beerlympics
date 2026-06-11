@@ -440,4 +440,40 @@ export default defineSchema({
   })
     .index("by_event", ["eventId"])
     .index("by_event_and_voter", ["eventId", "voterUserId"]),
+
+  // ── Quiplash-style quip battles (one active round at a time) ────────────────
+  quipRounds: defineTable({
+    eventId: v.id("events"),
+    prompt: v.string(),
+    phase: v.union(
+      v.literal("answer"), // everyone writes an answer on their phone
+      v.literal("vote"), // everyone votes on the (anonymous) answers
+      v.literal("reveal"), // ranked answers + author + winner on the TV
+      v.literal("closed"), // round over, screen cleared
+    ),
+    awardedAt: v.optional(v.number()), // bonus points handed out once, at reveal
+    createdByUserId: v.optional(v.id("users")),
+    createdAt: v.number(),
+  }).index("by_event", ["eventId"]),
+
+  quipAnswers: defineTable({
+    eventId: v.id("events"),
+    roundId: v.id("quipRounds"),
+    authorUserId: v.id("users"),
+    authorName: v.string(),
+    text: v.string(),
+    createdAt: v.number(),
+  })
+    .index("by_round", ["roundId"])
+    .index("by_round_and_author", ["roundId", "authorUserId"]),
+
+  quipVotes: defineTable({
+    eventId: v.id("events"),
+    roundId: v.id("quipRounds"),
+    voterUserId: v.id("users"),
+    answerId: v.id("quipAnswers"),
+    createdAt: v.number(),
+  })
+    .index("by_round", ["roundId"])
+    .index("by_round_and_voter", ["roundId", "voterUserId"]),
 });

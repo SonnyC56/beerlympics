@@ -10,6 +10,7 @@ import { Spinner, TeamBadge, cx, useAction } from "@/components/primitives";
 import { Icon } from "@/components/Icon";
 import { HostSectionTitle, MiniButton } from "./HostKit";
 import { DrinkSiren } from "./HostSiren";
+import { HostQuips } from "./HostQuips";
 
 type TeamLite = { _id: Id<"teams">; name: string; emoji: string; color: string };
 
@@ -17,6 +18,7 @@ export function HostExtras() {
   return (
     <div className="space-y-5">
       <DrinkSiren />
+      <HostQuips />
       <Bounties />
       <PollControl />
       <PodiumControl />
