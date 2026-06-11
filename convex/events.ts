@@ -1,5 +1,6 @@
 import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import {
   assertHost,
   genCode,
@@ -203,6 +204,60 @@ export const getHostCode = query({
     if (!user?.isHost) return null;
     const event = await getActiveEvent(ctx);
     return event?.hostCode ?? null;
+  },
+});
+
+/**
+ * Host: fire the "EVERYBODY DRINKS" siren — a transient full-screen takeover on
+ * the TV + every phone, plus a web-push broadcast. The overlay is driven by the
+ * `firedAt` timestamp on the event (clients show it for a few seconds).
+ */
+export const fireSiren = mutation({
+  args: { deviceId: v.string(), message: v.optional(v.string()) },
+  handler: async (ctx, { deviceId, message }) => {
+    await assertHost(ctx, deviceId);
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const msg = (message?.trim() || "EVERYBODY DRINKS").slice(0, 80);
+    await ctx.db.patch(event._id, { siren: { firedAt: Date.now(), message: msg } });
+    await ctx.scheduler.runAfter(0, internal.pushSender.sendBroadcast, {
+      title: "DRINK!",
+      body: msg,
+      url: "/",
+    });
+    await recordActivity(ctx, event._id, {
+      kind: "announcement",
+      message: `DRINK SIREN — ${msg}`,
+    });
+    return true;
+  },
+});
+
+/** Host: reveal the champion podium on the closing-ceremony TV screen. */
+export const revealPodium = mutation({
+  args: { deviceId: v.string() },
+  handler: async (ctx, { deviceId }) => {
+    await assertHost(ctx, deviceId);
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    await ctx.db.patch(event._id, { podiumAt: Date.now() });
+    await recordActivity(ctx, event._id, {
+      kind: "announcement",
+      message: "The champions are crowned — to the podium!",
+    });
+    return true;
+  },
+});
+
+/** Host: hide the champion podium again. */
+export const hidePodium = mutation({
+  args: { deviceId: v.string() },
+  handler: async (ctx, { deviceId }) => {
+    await assertHost(ctx, deviceId);
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    await ctx.db.patch(event._id, { podiumAt: undefined });
+    return true;
   },
 });
 

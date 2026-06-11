@@ -9,10 +9,19 @@ import { HostGames } from "./HostGames";
 import { HostTeams } from "./HostTeams";
 import { HostInvites } from "./HostInvites";
 import { HostScoring } from "./HostScoring";
+import { HostExtras } from "./HostExtras";
 import { HostSettings } from "./HostSettings";
 import { HostReset } from "./HostReset";
 
-type Tab = "run" | "games" | "teams" | "invites" | "scoring" | "settings" | "reset";
+type Tab =
+  | "run"
+  | "games"
+  | "teams"
+  | "invites"
+  | "scoring"
+  | "extras"
+  | "settings"
+  | "reset";
 
 const TABS: { value: Tab; label: string; icon: IconName }[] = [
   { value: "run", label: "Run", icon: "sliders" },
@@ -20,6 +29,7 @@ const TABS: { value: Tab; label: string; icon: IconName }[] = [
   { value: "teams", label: "Teams", icon: "flag" },
   { value: "invites", label: "Invites", icon: "envelope" },
   { value: "scoring", label: "Score", icon: "target" },
+  { value: "extras", label: "Extras", icon: "sparkle" },
   { value: "settings", label: "Setup", icon: "gear" },
   { value: "reset", label: "Reset", icon: "alert" },
 ];
@@ -78,6 +88,7 @@ export default function HostPage() {
         {tab === "teams" && <HostTeams />}
         {tab === "invites" && <HostInvites />}
         {tab === "scoring" && <HostScoring />}
+        {tab === "extras" && <HostExtras />}
         {tab === "settings" && <HostSettings />}
         {tab === "reset" && <HostReset />}
       </div>

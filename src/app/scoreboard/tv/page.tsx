@@ -9,6 +9,7 @@ import { GameArt } from "@/components/gameArt";
 import { colorHex } from "@/lib/teamColors";
 import type { StandingTeam } from "@/components/Leaderboard";
 import { formatClock } from "@/lib/format";
+import { SirenOverlay } from "@/components/SirenOverlay";
 
 type Phase = {
   _id: string;
@@ -137,6 +138,8 @@ export default function ScoreboardTvPage() {
 
       {/* -- Now-playing marquee -- */}
       <NowPlaying matches={(live as LiveMatch[] | undefined) ?? undefined} />
+
+      <SirenOverlay />
     </div>
   );
 }

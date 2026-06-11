@@ -242,6 +242,34 @@ function EventHome() {
         </Link>
       </section>
 
+      {/* Side quests + (when live) Player of the Day */}
+      <section className="grid grid-cols-2 gap-3">
+        <Link
+          href="/bounties"
+          className={`panel-tight flex flex-col gap-1 p-4 transition hover:bg-white/[0.03] ${
+            event.poll?.open || event.poll?.revealed ? "" : "col-span-2"
+          }`}
+        >
+          <span className="text-[var(--color-gold-400)]"><Icon name="target" size={22} /></span>
+          <div className="font-bold text-white">Side Quests</div>
+          <div className="text-xs text-white/50">
+            Bonus-point challenges running all day.
+          </div>
+        </Link>
+        {(event.poll?.open || event.poll?.revealed) && (
+          <Link
+            href="/mvp"
+            className="panel-tight flex flex-col gap-1 p-4 transition hover:bg-white/[0.03]"
+          >
+            <span className="text-[var(--color-gold-400)]"><Icon name="crown" size={22} /></span>
+            <div className="font-bold text-white">Player of the Day</div>
+            <div className="text-xs text-white/50">
+              {event.poll?.revealed ? "See who won MVP." : "Vote for the day's MVP."}
+            </div>
+          </Link>
+        )}
+      </section>
+
       {/* Host: opening ceremony quick link */}
       {identity.isHost && !finished && (
         <Link

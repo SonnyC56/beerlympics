@@ -15,6 +15,7 @@ import {
 import { Icon, Mascot } from "@/components/Icon";
 import { GameArt } from "@/components/gameArt";
 import { HostStat, HostSectionTitle, MiniButton, StatusDot } from "./HostKit";
+import { DrinkSiren } from "./HostSiren";
 
 type Seeding = "seed" | "random" | "standings";
 
@@ -57,6 +58,8 @@ export function HostRun() {
   return (
     <div className="space-y-5">
       <StatusControl status={event.status} />
+
+      <DrinkSiren />
 
       <CeremonyControl />
 

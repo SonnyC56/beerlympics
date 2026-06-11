@@ -16,6 +16,7 @@ import {
   useAction,
 } from "./primitives";
 import { EmojiPicker } from "./EmojiColorPicker";
+import { SirenOverlay } from "./SirenOverlay";
 
 const TABS: { href: string; label: string; icon: IconName }[] = [
   { href: "/", label: "Home", icon: "home" },
@@ -160,6 +161,7 @@ function Shell({ children }: { children: ReactNode }) {
       )}
 
       <ProfileSheet open={profileOpen} onClose={() => setProfileOpen(false)} />
+      <SirenOverlay />
     </div>
   );
 }

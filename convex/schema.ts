@@ -66,6 +66,16 @@ export default defineSchema({
         updatedAt: v.number(),
       }),
     ),
+    // Host-fired "everybody drinks" siren — a transient TV + phone takeover.
+    siren: v.optional(
+      v.object({ firedAt: v.number(), message: v.string() }),
+    ),
+    // Closing ceremony: when set, the champion podium is revealed on the TV.
+    podiumAt: v.optional(v.number()),
+    // Player of the Day poll state (votes live in the `pollVotes` table).
+    poll: v.optional(
+      v.object({ open: v.boolean(), revealed: v.boolean() }),
+    ),
     // Scoring knobs the host can tune.
     settings: v.object({
       // Keyed by category string (e.g. { drinking: 1, lawn: 1.5 }).
@@ -406,4 +416,28 @@ export default defineSchema({
     teamId: v.optional(v.id("teams")),
     createdAt: v.number(),
   }).index("by_event", ["eventId"]),
+
+  // ── Side quests / bounties (host-posted bonus-point challenges) ─────────────
+  bounties: defineTable({
+    eventId: v.id("events"),
+    title: v.string(),
+    description: v.optional(v.string()),
+    points: v.number(),
+    status: v.union(v.literal("open"), v.literal("done")),
+    claims: v.optional(v.array(v.id("teams"))), // teams that raised "we did it!"
+    awardedTeamId: v.optional(v.id("teams")),
+    awardedAt: v.optional(v.number()),
+    createdByUserId: v.optional(v.id("users")),
+    createdAt: v.number(),
+  }).index("by_event", ["eventId"]),
+
+  // ── Player of the Day votes (one ballot per voter) ──────────────────────────
+  pollVotes: defineTable({
+    eventId: v.id("events"),
+    voterUserId: v.id("users"),
+    nomineeUserId: v.id("users"),
+    createdAt: v.number(),
+  })
+    .index("by_event", ["eventId"])
+    .index("by_event_and_voter", ["eventId", "voterUserId"]),
 });
