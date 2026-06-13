@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { internalMutation, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { assertHost, getActiveEvent, recordActivity } from "./lib";
 import {
@@ -508,5 +508,61 @@ export const resetGame = mutation({
     for (const e of entries) await ctx.db.delete(e._id);
     await ctx.db.patch(gameId, { status: "scheduled" });
     return true;
+  },
+});
+
+/**
+ * Admin-only (CLI/dashboard): re-seed every bracketed game in the current phase
+ * that hasn't started yet with an INDEPENDENT random draw, so teams stop facing
+ * the same opponent across games (the default seed order pairs everyone the same
+ * way in every game). Games with any in-progress/queued/completed match are left
+ * untouched, as are gated finales and wheel/special games. Idempotent-ish: safe
+ * to re-run (it just re-randomises the not-yet-started brackets again).
+ */
+export const reshuffleUnstarted = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const phaseIndex = Math.max(0, event.currentPhaseIndex);
+    const games = await ctx.db
+      .query("games")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+
+    const reshuffled: string[] = [];
+    const skipped: string[] = [];
+    for (const g of games) {
+      if (g.enabled === false) continue;
+      if (g.format === "wheel" || g.format === "special") continue;
+      if (g.isGated) continue; // leave the gated finale alone
+      const matches = (
+        await ctx.db
+          .query("matches")
+          .withIndex("by_game", (q) => q.eq("gameId", g._id))
+          .collect()
+      ).filter((m) => m.phaseIndex === phaseIndex);
+      if (matches.length === 0) continue; // nothing built for this phase
+      const started = matches.some((m) =>
+        ["in_progress", "queued", "completed"].includes(m.status),
+      );
+      if (started) {
+        skipped.push(g.name);
+        continue;
+      }
+      const ordered = await orderTeams(ctx, event, "random");
+      if (ordered.length < 2) continue;
+      await buildInstance(ctx, event, g, phaseIndex, ordered); // clears + rebuilds
+      reshuffled.push(g.name);
+    }
+
+    if (reshuffled.length > 0) {
+      await recordActivity(ctx, event._id, {
+        kind: "announcement",
+        message: "Fresh draws! Upcoming brackets have been re-shuffled for new matchups.",
+      });
+    }
+    const seated = await runDispatch(ctx, event);
+    return { reshuffled, skipped, seated };
   },
 });
