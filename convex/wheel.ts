@@ -1,4 +1,4 @@
-import { mutation, query } from "./_generated/server";
+import { internalMutation, mutation, query } from "./_generated/server";
 import { v } from "convex/values";
 import { internal } from "./_generated/api";
 import {
@@ -174,5 +174,53 @@ export const spins = query({
         };
       }),
     );
+  },
+});
+
+/**
+ * Admin-only (CLI/dashboard): the Wheel got too swingy mid-event. This removes
+ * every point the Wheel has awarded from the standings (deletes its scoreEntries)
+ * and strips the point values off its spots so future spins award nothing — the
+ * wheel still spins for drinks/dares. Spin history (wheelSpins) is preserved, so
+ * the points could be re-derived if ever needed. Idempotent.
+ */
+export const adminDisablePoints = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const games = await ctx.db
+      .query("games")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    const wheels = games.filter((g) => g.format === "wheel");
+
+    let entriesRemoved = 0;
+    let pointsRemoved = 0;
+    for (const w of wheels) {
+      const entries = await ctx.db
+        .query("scoreEntries")
+        .withIndex("by_event_and_game", (q) =>
+          q.eq("eventId", event._id).eq("gameId", w._id),
+        )
+        .collect();
+      for (const e of entries) {
+        pointsRemoved += e.points;
+        await ctx.db.delete(e._id);
+        entriesRemoved++;
+      }
+      // Strip point values off the spots (keep labels + "everybody drinks").
+      const spots =
+        w.wheelSpots && w.wheelSpots.length > 0 ? w.wheelSpots : DEFAULT_WHEEL_SPOTS;
+      const stripped = spots.map(({ points: _p, ...rest }) => rest);
+      await ctx.db.patch(w._id, { wheelSpots: stripped });
+    }
+
+    await recordActivity(ctx, event._id, {
+      kind: "announcement",
+      message:
+        "The Wheel is now just for fun — its points have been removed from the standings.",
+    });
+    return { wheels: wheels.length, entriesRemoved, pointsRemoved };
   },
 });
