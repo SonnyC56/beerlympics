@@ -104,9 +104,13 @@ function SlotRow({
 export function MatchNode({
   match,
   stationName,
+  canReport,
+  onReport,
 }: {
   match: BracketMatch;
   stationName?: string;
+  canReport?: boolean;
+  onReport?: () => void;
 }) {
   const decided = match.status === "completed";
   const teamsPerMatch = Math.max(2, match.teamIds.length, match.teams.length);
@@ -145,6 +149,15 @@ export function MatchNode({
           <Icon name="pin" size={12} /> {stationName}
         </div>
       )}
+      {canReport && onReport && (
+        <button
+          type="button"
+          onClick={onReport}
+          className="flex w-full items-center justify-center gap-1.5 border-t border-white/8 bg-[var(--color-gold-500)]/10 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-[var(--color-gold-300)] transition hover:bg-[var(--color-gold-500)]/20 active:scale-[0.99]"
+        >
+          <Icon name="finish" size={13} /> Report result
+        </button>
+      )}
     </div>
   );
 }
@@ -153,9 +166,13 @@ export function MatchNode({
 export function SingleElimBracket({
   matches,
   stationNameFor,
+  canReport,
+  onReport,
 }: {
   matches: BracketMatch[];
   stationNameFor?: (m: BracketMatch) => string | undefined;
+  canReport?: (m: BracketMatch) => boolean;
+  onReport?: (m: BracketMatch) => void;
 }) {
   const rounds = [...new Set(matches.map((m) => m.round))].sort((a, b) => a - b);
   const roundTitle = (round: number, idx: number) => {
@@ -192,6 +209,8 @@ export function SingleElimBracket({
                     key={m._id}
                     match={m}
                     stationName={stationNameFor?.(m)}
+                    canReport={canReport?.(m) ?? false}
+                    onReport={onReport ? () => onReport(m) : undefined}
                   />
                 ))}
               </div>
@@ -207,9 +226,13 @@ export function SingleElimBracket({
 export function RoundList({
   matches,
   stationNameFor,
+  canReport,
+  onReport,
 }: {
   matches: BracketMatch[];
   stationNameFor?: (m: BracketMatch) => string | undefined;
+  canReport?: (m: BracketMatch) => boolean;
+  onReport?: (m: BracketMatch) => void;
 }) {
   const rounds = [...new Set(matches.map((m) => m.round))].sort((a, b) => a - b);
   return (
@@ -240,6 +263,8 @@ export function RoundList({
                     key={m._id}
                     match={m}
                     stationName={stationNameFor?.(m)}
+                    canReport={canReport?.(m) ?? false}
+                    onReport={onReport ? () => onReport(m) : undefined}
                   />
                 ))}
               </div>

@@ -79,8 +79,11 @@ export const reportResult = mutation({
         .unique();
       const onTeam = player?.teamId && match.teamIds.includes(player.teamId);
       if (!onTeam) throw new Error("You can only score your own matches.");
-      if (match.status !== "in_progress") {
-        throw new Error("That match isn't in progress yet.");
+      // Allow reporting once both teams are locked in (ready) or playing —
+      // the fluid circuit lets teams roam and play whatever's ready. Still block
+      // "pending" matches whose opponent hasn't been decided yet.
+      if (match.status !== "in_progress" && match.status !== "ready") {
+        throw new Error("That match isn't ready to score yet.");
       }
     }
 

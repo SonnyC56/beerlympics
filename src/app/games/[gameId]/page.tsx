@@ -23,6 +23,7 @@ import {
 } from "@/components/BracketView";
 import { GameArt } from "@/components/gameArt";
 import { Icon, Medal } from "@/components/Icon";
+import { ResultSheet, type ResultMatch } from "@/components/ResultSheet";
 import { WheelGame } from "@/components/WheelGame";
 import { SpecialEventGame } from "@/components/SpecialEventGame";
 import { MediaCapture } from "@/components/MediaCapture";
@@ -68,6 +69,7 @@ export default function GameBracketPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const id = gameId as Id<"games">;
 
+  const identity = useIdentity();
   const game = useQuery(api.games.get, { gameId: id }) as
     | GameDoc
     | null
@@ -79,6 +81,12 @@ export default function GameBracketPage() {
     | GameStanding[]
     | undefined;
   const stations = useQuery(api.stations.list, {});
+  const event = useQuery(api.events.get, {});
+  const mine = useQuery(
+    api.rsvp.mine,
+    identity.deviceId ? { deviceId: identity.deviceId } : "skip",
+  );
+  const [reporting, setReporting] = useState<ResultMatch | null>(null);
 
   if (game === undefined) return <Spinner label="Loading the bracket…" />;
   if (game === null) {
@@ -105,6 +113,32 @@ export default function GameBracketPage() {
   const stationNameFor = (m: BracketMatch) =>
     m.stationId ? stationNameById.get(m.stationId as string) : undefined;
 
+  // Who can report a match from the bracket: the host on any undecided match,
+  // and a self-claiming player on their own match once it's ready/playing.
+  const allowSelfClaim = !!event?.settings?.allowSelfClaim;
+  const myTeamId = (mine as { player?: { teamId?: Id<"teams"> } } | null | undefined)
+    ?.player?.teamId;
+  const canReport = (m: BracketMatch) => {
+    if (m.status === "completed" || m.status === "void") return false;
+    if (m.teams.length < 2) return false;
+    if (identity.isHost) return true;
+    return (
+      allowSelfClaim &&
+      (m.status === "in_progress" || m.status === "ready") &&
+      !!myTeamId &&
+      m.teams.some((t) => t._id === myTeamId)
+    );
+  };
+  const openReport = (m: BracketMatch) =>
+    setReporting({
+      _id: m._id,
+      label: m.label,
+      teams: m.teams,
+      gameName: game.name,
+      gameArt: game.art,
+      stationName: stationNameFor(m),
+    });
+
   return (
     <div className="space-y-5">
       <BackLink />
@@ -125,10 +159,19 @@ export default function GameBracketPage() {
             game={game}
             matches={matches}
             stationNameFor={stationNameFor}
+            canReport={canReport}
+            onReport={openReport}
           />
           <GameMedia gameId={game._id} />
         </>
       )}
+
+      <ResultSheet
+        open={reporting !== null}
+        onClose={() => setReporting(null)}
+        match={reporting}
+        deviceId={identity.deviceId}
+      />
     </div>
   );
 }
@@ -295,10 +338,14 @@ function BracketSection({
   game,
   matches,
   stationNameFor,
+  canReport,
+  onReport,
 }: {
   game: GameDoc;
   matches: BracketMatch[] | undefined;
   stationNameFor: (m: BracketMatch) => string | undefined;
+  canReport: (m: BracketMatch) => boolean;
+  onReport: (m: BracketMatch) => void;
 }) {
   if (matches === undefined) return <Spinner label="Loading matches…" />;
 
@@ -341,6 +388,8 @@ function BracketSection({
           <SingleElimBracket
             matches={matches}
             stationNameFor={stationNameFor}
+            canReport={canReport}
+            onReport={onReport}
           />
           <p className="mt-3 flex items-center justify-center gap-1 text-center text-[11px] text-white/30 sm:hidden">
             <Icon name="arrowLeft" size={12} /> swipe to see later rounds{" "}
@@ -348,7 +397,12 @@ function BracketSection({
           </p>
         </>
       ) : (
-        <RoundList matches={matches} stationNameFor={stationNameFor} />
+        <RoundList
+          matches={matches}
+          stationNameFor={stationNameFor}
+          canReport={canReport}
+          onReport={onReport}
+        />
       )}
     </section>
   );

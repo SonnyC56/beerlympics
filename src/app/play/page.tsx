@@ -416,93 +416,126 @@ function YoureUp({
   onOpenResult: (m: ResultMatch) => void;
 }) {
   const playing = matches.find((m) => m.status === "in_progress");
-  const onDeck = matches
+  const ready = matches
     .filter((m) => m.status === "ready" || m.status === "queued")
     .sort((a, b) => (a.status === "queued" ? -1 : 1));
+  const nothing = !playing && ready.length === 0;
 
   return (
     <section>
       <SectionHead title="You're Up" icon="target" />
-      {playing ? (
-        <div
-          className="panel relative overflow-hidden p-5 animate-pop"
-          style={{ boxShadow: "0 0 0 1px rgba(247,183,51,0.45), 0 22px 60px -25px rgba(247,183,51,0.6)" }}
-        >
-          <div className="pointer-events-none absolute -right-5 -top-5 leading-none opacity-10">
-            <GameArt artKey={playing.gameArt} size={100} title={playing.gameName ?? "Match"} />
-          </div>
-          <div className="relative">
-            <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--color-live)]">
-              <span className="live-dot" /> You're playing right now
+      <div className="space-y-3">
+        {playing && (
+          <div
+            className="panel relative overflow-hidden p-5 animate-pop"
+            style={{ boxShadow: "0 0 0 1px rgba(247,183,51,0.45), 0 22px 60px -25px rgba(247,183,51,0.6)" }}
+          >
+            <div className="pointer-events-none absolute -right-5 -top-5 leading-none opacity-10">
+              <GameArt artKey={playing.gameArt} size={100} title={playing.gameName ?? "Match"} />
             </div>
-            <h3 className="mt-2 flex items-center gap-2 font-display text-2xl leading-tight text-white">
-              <GameArt artKey={playing.gameArt} size={24} title={playing.gameName ?? "Match"} />
-              {playing.gameName ?? "Your match"}
-            </h3>
-            {playing.stationName && (
-              <p className="mt-1 text-sm text-white/60">
-                at <span className="font-bold text-[var(--color-gold-300)]">{playing.stationName}</span>
+            <div className="relative">
+              <div className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-[var(--color-live)]">
+                <span className="live-dot" /> You're playing right now
+              </div>
+              <h3 className="mt-2 flex items-center gap-2 font-display text-2xl leading-tight text-white">
+                <GameArt artKey={playing.gameArt} size={24} title={playing.gameName ?? "Match"} />
+                {playing.gameName ?? "Your match"}
+              </h3>
+              {playing.stationName && (
+                <p className="mt-1 text-sm text-white/60">
+                  at <span className="font-bold text-[var(--color-gold-300)]">{playing.stationName}</span>
+                </p>
+              )}
+              <div className="mt-4 rounded-2xl bg-black/30 p-3">
+                <VersusRow teams={playing.teams} />
+              </div>
+              <button
+                className="btn btn-gold mt-4 w-full"
+                onClick={() =>
+                  onOpenResult({
+                    _id: playing._id,
+                    label: playing.label,
+                    teams: playing.teams,
+                    gameName: playing.gameName,
+                    gameArt: playing.gameArt,
+                    stationName: playing.stationName,
+                  })
+                }
+              >
+                <Icon name="finish" size={18} /> Report Result
+              </button>
+              <div className="mt-2 flex justify-center">
+                <MediaCapture variant="chip" matchId={playing._id} label="Add match photo/video" />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {ready.length > 0 && (
+          <div className="space-y-2">
+            {playing && (
+              <p className="px-1 text-xs text-white/55">
+                Waiting on your opponent? Jump into any of these now — play them in
+                any order, then report the result.
               </p>
             )}
-            <div className="mt-4 rounded-2xl bg-black/30 p-3">
-              <VersusRow teams={playing.teams} />
-            </div>
-            <button
-              className="btn btn-gold mt-4 w-full"
-              onClick={() =>
-                onOpenResult({
-                  _id: playing._id,
-                  label: playing.label,
-                  teams: playing.teams,
-                  gameName: playing.gameName,
-                  gameArt: playing.gameArt,
-                  stationName: playing.stationName,
-                })
-              }
-            >
-              <Icon name="finish" size={18} /> Report Result
-            </button>
-            <div className="mt-2 flex justify-center">
-              <MediaCapture variant="chip" matchId={playing._id} label="Add match photo/video" />
-            </div>
-          </div>
-        </div>
-      ) : onDeck.length > 0 ? (
-        <div className="space-y-2">
-          {onDeck.map((m) => (
-            <div key={m._id} className="panel-tight flex items-center gap-3 p-4">
-              <GameArt artKey={m.gameArt} size={24} title={m.gameName ?? "Match"} />
-              <div className="min-w-0 flex-1">
-                <div className="font-bold text-white">
-                  On deck · {m.gameName ?? "Up next"}
+            {ready.map((m) => (
+              <div key={m._id} className="panel-tight p-4">
+                <div className="flex items-center gap-3">
+                  <GameArt artKey={m.gameArt} size={24} title={m.gameName ?? "Match"} />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate font-bold text-white">
+                      {m.gameName ?? "Up next"}
+                    </div>
+                    <div className="mt-1">
+                      <VersusRow teams={m.teams} size="sm" />
+                    </div>
+                  </div>
+                  <span className="chip shrink-0 border-[var(--color-gold-500)]/45 text-[var(--color-gold-300)]">
+                    {m.status === "queued" ? "On deck" : "Ready"}
+                  </span>
                 </div>
-                <div className="mt-1">
-                  <VersusRow teams={m.teams} size="sm" />
-                </div>
+                <button
+                  className="btn btn-ghost mt-3 w-full py-2 text-sm"
+                  onClick={() =>
+                    onOpenResult({
+                      _id: m._id,
+                      label: m.label,
+                      teams: m.teams,
+                      gameName: m.gameName,
+                      gameArt: m.gameArt,
+                      stationName: m.stationName,
+                    })
+                  }
+                >
+                  <span className="flex items-center justify-center gap-1.5">
+                    <Icon name="finish" size={14} /> Report result
+                  </span>
+                </button>
               </div>
-              <span className="chip shrink-0 border-[var(--color-gold-500)]/45 text-[var(--color-gold-300)]">
-                {m.status === "queued" ? "On deck" : "Queued"}
+            ))}
+          </div>
+        )}
+
+        {nothing &&
+          (matches.length > 0 ? (
+            <div className="panel-tight flex items-center gap-3 p-4 text-sm text-white/60">
+              <span className="text-white/70">
+                <Icon name="clock" size={24} />
               </span>
+              You've got matches coming up — they'll appear here once your bracket
+              slot is ready. Stay loose.
+            </div>
+          ) : (
+            <div className="panel-tight flex items-center gap-3 p-4 text-sm text-white/60">
+              <span className="text-white/70">
+                <Icon name="beer" size={24} />
+              </span>
+              You're not in a match right now. Join a team and the dispatcher will
+              put you in the action.
             </div>
           ))}
-        </div>
-      ) : matches.length > 0 ? (
-        <div className="panel-tight flex items-center gap-3 p-4 text-sm text-white/60">
-          <span className="text-white/70">
-            <Icon name="clock" size={24} />
-          </span>
-          You've got matches coming up — they'll appear here once your bracket
-          slot is ready. Stay loose.
-        </div>
-      ) : (
-        <div className="panel-tight flex items-center gap-3 p-4 text-sm text-white/60">
-          <span className="text-white/70">
-            <Icon name="beer" size={24} />
-          </span>
-          You're not in a match right now. Join a team and the dispatcher will put
-          you in the action.
-        </div>
-      )}
+      </div>
     </section>
   );
 }
