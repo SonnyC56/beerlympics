@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@convex/_generated/api";
 import type { Id } from "@convex/_generated/dataModel";
@@ -14,7 +14,7 @@ import {
   useAction,
   useNow,
 } from "@/components/primitives";
-import { SpinWheel, type WheelSpot } from "@/components/SpinWheel";
+import { type WheelSpot } from "@/components/SpinWheel";
 import { Icon } from "@/components/Icon";
 import { colorHex } from "@/lib/teamColors";
 import { timeAgo } from "@/lib/format";
@@ -32,106 +32,62 @@ export function WheelGame({ game }: { game: { _id: Id<"games">; name: string; em
   const broadcastDrink = useMutation(api.wheel.broadcastDrink);
 
   const [teamId, setTeamId] = useState<Id<"teams"> | "">("");
-  const [spin, setSpin] = useState<{ index: number; nonce: number } | null>(null);
-  const [recordTeam, setRecordTeam] = useState<Id<"teams"> | null>(null);
   const [last, setLast] = useState<{
     label: string;
-    points: number;
     teamName?: string;
     broadcast?: boolean;
   } | null>(null);
-  const [spinning, setSpinning] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const nonce = useRef(0);
 
   if (cfg === undefined) return <Spinner label="Loading the wheel…" />;
   if (cfg === null) return null;
   const spots = cfg.spots as WheelSpot[];
 
-  const fire = (index: number, forTeam: Id<"teams"> | null) => {
-    nonce.current += 1;
-    setLast(null);
-    setRecordTeam(forTeam);
-    setSpinning(true);
-    setSpin({ index, nonce: nonce.current });
-  };
-  const spinRandom = (forTeam: Id<"teams"> | null) =>
-    fire(Math.floor(Math.random() * spots.length), forTeam);
-
-  const onArrive = async (index: number) => {
-    setSpinning(false);
+  // In-app spinning is disabled — the wheel is spun on the physical wheel. The
+  // host can log what it landed on (no animation) so broadcast spots still buzz.
+  const logSpot = async (index: number) => {
+    if (!teamId || !identity.deviceId) return;
     const spot = spots[index];
-    const team = teams?.find((t) => t._id === recordTeam);
-    setLast({
-      label: spot.label,
-      points: spot.points ?? 0,
-      teamName: team?.name,
-      broadcast: spot.broadcast,
-    });
-    if (recordTeam && identity.deviceId) {
-      const tid = recordTeam;
-      await run(
-        () => record({ deviceId: identity.deviceId!, gameId: game._id, teamId: tid, spotIndex: index }),
-        `Recorded: ${spot.label}`,
-      );
-    }
-    setRecordTeam(null);
+    const team = teams?.find((t) => t._id === teamId);
+    const tid = teamId;
+    setLast({ label: spot.label, teamName: team?.name, broadcast: spot.broadcast });
+    await run(
+      () => record({ deviceId: identity.deviceId!, gameId: game._id, teamId: tid, spotIndex: index }),
+      `Logged: ${spot.label}`,
+    );
   };
 
   const selectedTeam = teams?.find((t) => t._id === teamId);
 
   return (
     <div className="space-y-5">
-      {/* The wheel */}
-      <section className="panel stadium-grid flex flex-col items-center p-5">
-        <div className="w-full max-w-[420px]">
-          <SpinWheel spots={spots} size={420} spin={spin} onArrive={onArrive} />
+      {/* The wheel is run on the physical wheel — no in-app spinning */}
+      <section className="panel stadium-grid p-5 text-center">
+        <div className="flex justify-center text-[var(--color-gold-300)]">
+          <Icon name="wheel" size={48} />
         </div>
-
-        {/* result banner */}
-        <div className="mt-3 min-h-[2.5rem] text-center">
-          {last ? (
-            <div className="animate-pop">
-              <div className="font-display text-2xl text-medal">{last.label}</div>
-              <div className="text-sm text-white/60">
-                {last.teamName ? `${last.teamName} ` : ""}
-                {last.points ? (
-                  <span className={last.points > 0 ? "text-[var(--color-win)]" : "text-[var(--color-loss)]"}>
-                    {last.points > 0 ? "+" : ""}
-                    {last.points} pts
-                  </span>
-                ) : (
-                  "— do what it says!"
-                )}
-              </div>
-              {last.broadcast && (
-                <div className="mt-1 inline-flex items-center gap-1 text-xs font-bold text-[var(--color-gold-300)]">
-                  <Icon name="bell" size={13} /> Everybody drinks
-                  {last.teamName ? " — alert sent!" : "!"}
-                </div>
+        <h2 className="mt-2 font-display text-2xl text-medal">{game.name}</h2>
+        <p className="mx-auto mt-1 max-w-sm text-sm text-white/55">
+          Give the real wheel a spin out at the party. The spots are below — bell
+          spots mean everybody drinks.
+        </p>
+        <div className="mt-4 flex flex-wrap justify-center gap-1.5">
+          {spots.map((s, i) => (
+            <span
+              key={i}
+              className={cx(
+                "inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold",
+                s.broadcast
+                  ? "border-[var(--color-gold-500)]/40 bg-[var(--color-gold-500)]/10 text-[var(--color-gold-200)]"
+                  : "border-white/10 bg-white/4 text-white/70",
               )}
-            </div>
-          ) : (
-            <div className="flex items-center justify-center gap-1.5 text-sm text-white/35">
-              {spinning ? (
-                "Round and round…"
-              ) : (
-                <>
-                  Give it a spin <Icon name="wheel" size={16} />
-                </>
-              )}
-            </div>
-          )}
+              style={{ color: !s.broadcast && s.color ? colorHex(s.color) : undefined }}
+            >
+              {s.broadcast && <Icon name="bell" size={11} />}
+              {s.label}
+            </span>
+          ))}
         </div>
-
-        {/* everyone can practice-spin */}
-        <button
-          className="btn btn-ghost mt-1 inline-flex items-center justify-center gap-1.5"
-          disabled={spinning}
-          onClick={() => spinRandom(null)}
-        >
-          <Icon name="wheel" size={16} /> Spin it
-        </button>
       </section>
 
       {/* Host: broadcast a drink to everyone, instantly */}
@@ -207,24 +163,17 @@ export function WheelGame({ game }: { game: { _id: Id<"games">; name: string; em
             )}
           </div>
 
-          {/* spin & record, or enter the physical result */}
+          {/* log what the physical wheel landed on (no in-app spin) */}
           <div className="space-y-3">
             <div className="text-xs uppercase tracking-widest text-white/40">
-              2. Spin for them, or enter what the real wheel hit
+              2. Tap what the real wheel landed on{selectedTeam ? ` for ${selectedTeam.name}` : ""}
             </div>
-            <button
-              className="btn btn-gold w-full inline-flex items-center justify-center gap-1.5"
-              disabled={!teamId || spinning || !identity.deviceId}
-              onClick={() => teamId && spinRandom(teamId)}
-            >
-              <Icon name="wheel" size={16} /> Spin &amp; record{selectedTeam ? ` for ${selectedTeam.name}` : ""}
-            </button>
             <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
               {spots.map((s, i) => (
                 <button
                   key={i}
-                  disabled={!teamId || spinning || !identity.deviceId}
-                  onClick={() => teamId && fire(i, teamId)}
+                  disabled={!teamId || !identity.deviceId}
+                  onClick={() => logSpot(i)}
                   className={cx(
                     "flex items-center justify-center gap-1 truncate rounded-lg border px-2 py-1.5 text-xs font-semibold transition hover:bg-white/10 disabled:opacity-40",
                     s.broadcast
@@ -234,8 +183,8 @@ export function WheelGame({ game }: { game: { _id: Id<"games">; name: string; em
                   style={{ color: !s.broadcast && s.color ? colorHex(s.color) : undefined }}
                   title={
                     s.broadcast
-                      ? `${s.label} — records + buzzes everyone to drink`
-                      : `It landed on ${s.label}`
+                      ? `${s.label} — logs it + buzzes everyone to drink`
+                      : `Log: ${s.label}`
                   }
                 >
                   {s.broadcast && <Icon name="bell" size={11} />}
@@ -247,9 +196,14 @@ export function WheelGame({ game }: { game: { _id: Id<"games">; name: string; em
               <Icon name="bell" size={10} className="mb-0.5 inline" /> spots also buzz
               everyone to drink.
             </p>
-            {!teamId && (
+            {!teamId ? (
               <p className="text-center text-xs text-white/40">Pick a team first.</p>
-            )}
+            ) : last ? (
+              <p className="text-center text-xs text-[var(--color-gold-300)]">
+                Logged: {last.label}
+                {last.broadcast ? " — drink alert sent!" : ""}
+              </p>
+            ) : null}
           </div>
         </section>
       )}
