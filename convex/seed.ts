@@ -15,7 +15,14 @@ const DEFAULT_SETTINGS = {
 // Games removed from the lineup — `seed:resync` (and `purgeRetired`) delete these
 // (and their stations / matches / score rows) if they still exist, and they're
 // no longer in GAME_CATALOG so they never re-seed.
-const RETIRED_GAMES = ["Slap Cup", "Quarters", "Snappa", "Boat Race", "Cornhole"];
+const RETIRED_GAMES = [
+  "Slap Cup",
+  "Quarters",
+  "Snappa",
+  "Boat Race",
+  "Cornhole",
+  "Crispy Wickets",
+];
 
 const PHASES = [
   {
