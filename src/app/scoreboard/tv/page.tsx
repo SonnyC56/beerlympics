@@ -44,7 +44,7 @@ export default function ScoreboardTvPage() {
   const finished = event?.status === "finished";
 
   return (
-    <div className="relative flex min-h-[100dvh] flex-col overflow-hidden bg-[var(--color-ink-950)] text-white">
+    <div className="relative flex h-[100dvh] flex-col overflow-hidden bg-[var(--color-ink-950)] text-white">
       {/* Ambient stadium glow */}
       <div
         className="stadium-grid pointer-events-none absolute inset-0 opacity-60"
@@ -57,7 +57,7 @@ export default function ScoreboardTvPage() {
       />
 
       {/* -- Header -- */}
-      <header className="relative flex items-center justify-between gap-6 px-[3vw] pt-[3vh]">
+      <header className="relative flex shrink-0 items-center justify-between gap-6 px-[3vw] pt-[2vh]">
         <div className="flex items-center gap-4">
           {!finished && (
             <span
@@ -74,7 +74,7 @@ export default function ScoreboardTvPage() {
             className="h-[7vh] w-[7vh]"
           />
           <div>
-            <h1 className="font-display text-[6vh] leading-[0.95] text-medal">
+            <h1 className="font-display text-[5vh] leading-[0.95] text-medal">
               {event?.name ?? "Beerlympics"}
             </h1>
             <div className="mt-1 flex items-center gap-3 text-[2.1vh] font-bold uppercase tracking-[0.2em]">
@@ -114,9 +114,9 @@ export default function ScoreboardTvPage() {
       </header>
 
       {/* -- Leaderboard -- */}
-      <main className="relative flex flex-1 flex-col justify-center px-[3vw] py-[2vh]">
+      <main className="relative flex min-h-0 flex-1 flex-col justify-center overflow-hidden px-[3vw] py-[1.5vh]">
         {teams.length > 0 ? (
-          <ol className="flex flex-col gap-[1.2vh]">
+          <ol className="flex flex-col justify-center gap-[1vh]">
             {teams.map((t, i) => (
               <TvRow key={t._id} team={t} leader={leader} index={i} />
             ))}
@@ -175,11 +175,11 @@ function TvRow({
       style={{ animationDelay: `${Math.min(index * 70, 560)}ms` }}
     >
       {/* Rank */}
-      <div className="flex w-[7vh] shrink-0 items-center justify-center">
+      <div className="flex w-[6vh] shrink-0 items-center justify-center">
         {team.rank <= 3 ? (
-          <Medal rank={team.rank} size={48} className="h-[5.5vh] w-[5.5vh]" />
+          <Medal rank={team.rank} size={44} className="h-[4.6vh] w-[4.6vh]" />
         ) : (
-          <span className="font-display text-[4.5vh] tabular-nums leading-none text-white/30">
+          <span className="font-display text-[4vh] tabular-nums leading-none text-white/30">
             {team.rank}
           </span>
         )}
@@ -189,11 +189,11 @@ function TvRow({
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-4">
           <div className="flex min-w-0 items-center gap-3">
-            <Mascot name={team.emoji} size={36} className="h-[4vh] w-[4vh] shrink-0" />
+            <Mascot name={team.emoji} size={32} className="h-[3.6vh] w-[3.6vh] shrink-0" />
             <span
               className={cx(
                 "min-w-0 truncate font-display tracking-wide",
-                champ ? "text-[5vh]" : "text-[4vh]",
+                champ ? "text-[4.2vh]" : "text-[3.6vh]",
               )}
               style={{ color: champ ? hex : undefined }}
             >
@@ -201,13 +201,13 @@ function TvRow({
             </span>
           </div>
           <span
-            className="shrink-0 font-display text-[5.5vh] tabular-nums leading-none"
+            className="shrink-0 font-display text-[4.6vh] tabular-nums leading-none"
             style={{ color: hex, textShadow: `0 0 24px ${hex}66` }}
           >
             {team.total}
           </span>
         </div>
-        <div className="mt-[0.8vh] h-[1.6vh] w-full overflow-hidden rounded-full bg-white/8">
+        <div className="mt-[0.5vh] h-[1.2vh] w-full overflow-hidden rounded-full bg-white/8">
           <div
             className="h-full rounded-full transition-all duration-1000 ease-out"
             style={{
@@ -226,7 +226,7 @@ function NowPlaying({ matches }: { matches: LiveMatch[] | undefined }) {
   const active = matches?.filter((m) => m.teams.length > 0) ?? [];
 
   return (
-    <footer className="relative border-t border-white/10 bg-black/40 backdrop-blur-md">
+    <footer className="relative shrink-0 border-t border-white/10 bg-black/40 backdrop-blur-md">
       <div className="flex items-stretch">
         {/* Label */}
         <div className="flex shrink-0 items-center gap-3 bg-[var(--color-live)]/15 px-[2.5vw] py-[2vh]">
