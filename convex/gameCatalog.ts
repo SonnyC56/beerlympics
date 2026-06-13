@@ -135,11 +135,11 @@ export const GAME_CATALOG: CatalogGame[] = [
     stations: 1,
     blurb: "2v2 continuous pong — no turns, both sides fire at once. Mayhem.",
     rules: [
-      "2v2. Each player sets up their own triangle of 6 cups in front of them — 12 cups per team, 24 on the table. Two ping-pong balls per team.",
+      "2v2. Each player sets up their own triangle of 3 cups in front of them — 6 cups per team, 12 on the table. Two ping-pong balls per team.",
       "No turns: on 'go', everyone shoots at the same time, continuously — grab a ball, fire, chase the rebound, repeat as fast as you can.",
       "Sink a ball in any opponent's cup and that player drinks it and pulls it off the table.",
       "Bounce shots count for two cups, but a defender may swat a bouncing ball away before it lands.",
-      "When all of a player's 6 cups are gone, that player is out and stops shooting.",
+      "When all of a player's 3 cups are gone, that player is out and stops shooting.",
       "Clear every cup on the other team's side (both their players) to win the match.",
     ],
   },
