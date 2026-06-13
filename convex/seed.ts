@@ -324,6 +324,36 @@ export const resync = mutation({
 });
 
 /**
+ * Admin-only (CLI/dashboard): refresh ONE live game's descriptive fields
+ * (blurb + rules + teamsPerMatch) from GAME_CATALOG, without a full resync.
+ * Use to push a rules edit to the live event mid-game.
+ */
+export const syncGame = internalMutation({
+  args: { name: v.string() },
+  handler: async (ctx, { name }) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const target = name.trim().toLowerCase();
+    const cat = GAME_CATALOG.find(
+      (g) => g.name.trim().toLowerCase() === target,
+    );
+    if (!cat) throw new Error(`"${name}" isn't in the catalog.`);
+    const games = await ctx.db
+      .query("games")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    const g = games.find((x) => x.name.trim().toLowerCase() === target);
+    if (!g) throw new Error(`"${name}" isn't in the live event.`);
+    await ctx.db.patch(g._id, {
+      description: cat.blurb,
+      rules: cat.rules.join("\n"),
+      teamsPerMatch: cat.teamsPerMatch,
+    });
+    return { patched: g.name, rules: cat.rules.length };
+  },
+});
+
+/**
  * Admin-only (CLI/dashboard): immediately purge any RETIRED_GAMES from the live
  * event — deletes the game and cascades its stations, matches, and score entries
  * — without running a full resync. Idempotent (no-op once they're gone). Pairs
