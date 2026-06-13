@@ -1,9 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import type { Id } from "@convex/_generated/dataModel";
 import { TeamBadge, cx } from "@/components/primitives";
 import { Icon } from "@/components/Icon";
 import { colorHex } from "@/lib/teamColors";
+
+/** Host-only per-match management actions (change/undo a result, unseat). */
+export type MatchManage = {
+  isHost: boolean;
+  onChangeResult: (m: BracketMatch) => void;
+  onUndo: (m: BracketMatch) => void;
+  onUnseat: (m: BracketMatch) => void;
+};
 
 // ── Shared match shape (from matches.forGame) ─────────────────────────────────
 export type BracketTeam = {
@@ -106,12 +115,15 @@ export function MatchNode({
   stationName,
   canReport,
   onReport,
+  manage,
 }: {
   match: BracketMatch;
   stationName?: string;
   canReport?: boolean;
   onReport?: () => void;
+  manage?: MatchManage;
 }) {
+  const [confirmUndo, setConfirmUndo] = useState(false);
   const decided = match.status === "completed";
   const teamsPerMatch = Math.max(2, match.teamIds.length, match.teams.length);
   const slots: (BracketTeam | null)[] = [];
@@ -158,6 +170,50 @@ export function MatchNode({
           <Icon name="finish" size={13} /> Report result
         </button>
       )}
+
+      {/* Host: fix a completed match (change winner / undo). */}
+      {manage?.isHost && match.status === "completed" && (
+        <div className="flex border-t border-white/8 text-[10px] font-black uppercase tracking-widest">
+          <button
+            type="button"
+            onClick={() => manage.onChangeResult(match)}
+            className="flex flex-1 items-center justify-center gap-1.5 border-r border-white/8 px-3 py-2 text-white/55 transition hover:bg-white/5 hover:text-white"
+          >
+            <Icon name="edit" size={12} /> Change
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (confirmUndo) {
+                manage.onUndo(match);
+                setConfirmUndo(false);
+              } else {
+                setConfirmUndo(true);
+              }
+            }}
+            className={cx(
+              "flex flex-1 items-center justify-center gap-1.5 px-3 py-2 transition",
+              confirmUndo
+                ? "bg-[var(--color-loss)]/15 text-[var(--color-loss)]"
+                : "text-white/55 hover:bg-white/5 hover:text-white",
+            )}
+          >
+            <Icon name={confirmUndo ? "warning" : "refresh"} size={12} />
+            {confirmUndo ? "Confirm undo" : "Undo"}
+          </button>
+        </div>
+      )}
+
+      {/* Host: pull an in-progress match back to the queue. */}
+      {manage?.isHost && match.status === "in_progress" && (
+        <button
+          type="button"
+          onClick={() => manage.onUnseat(match)}
+          className="flex w-full items-center justify-center gap-1.5 border-t border-white/8 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white/55 transition hover:bg-white/5 hover:text-white"
+        >
+          <Icon name="arrowLeft" size={12} /> Send back to queue
+        </button>
+      )}
     </div>
   );
 }
@@ -168,11 +224,13 @@ export function SingleElimBracket({
   stationNameFor,
   canReport,
   onReport,
+  manage,
 }: {
   matches: BracketMatch[];
   stationNameFor?: (m: BracketMatch) => string | undefined;
   canReport?: (m: BracketMatch) => boolean;
   onReport?: (m: BracketMatch) => void;
+  manage?: MatchManage;
 }) {
   const rounds = [...new Set(matches.map((m) => m.round))].sort((a, b) => a - b);
   const roundTitle = (round: number, idx: number) => {
@@ -211,6 +269,7 @@ export function SingleElimBracket({
                     stationName={stationNameFor?.(m)}
                     canReport={canReport?.(m) ?? false}
                     onReport={onReport ? () => onReport(m) : undefined}
+                    manage={manage}
                   />
                 ))}
               </div>
@@ -228,11 +287,13 @@ export function RoundList({
   stationNameFor,
   canReport,
   onReport,
+  manage,
 }: {
   matches: BracketMatch[];
   stationNameFor?: (m: BracketMatch) => string | undefined;
   canReport?: (m: BracketMatch) => boolean;
   onReport?: (m: BracketMatch) => void;
+  manage?: MatchManage;
 }) {
   const rounds = [...new Set(matches.map((m) => m.round))].sort((a, b) => a - b);
   return (
@@ -265,6 +326,7 @@ export function RoundList({
                     stationName={stationNameFor?.(m)}
                     canReport={canReport?.(m) ?? false}
                     onReport={onReport ? () => onReport(m) : undefined}
+                    manage={manage}
                   />
                 ))}
               </div>

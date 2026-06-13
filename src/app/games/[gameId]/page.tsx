@@ -20,6 +20,7 @@ import {
   RoundList,
   SingleElimBracket,
   type BracketMatch,
+  type MatchManage,
 } from "@/components/BracketView";
 import { GameArt } from "@/components/gameArt";
 import { Icon, Medal } from "@/components/Icon";
@@ -86,6 +87,9 @@ export default function GameBracketPage() {
     api.rsvp.mine,
     identity.deviceId ? { deviceId: identity.deviceId } : "skip",
   );
+  const run = useAction();
+  const reopenMatch = useMutation(api.matches.reopenMatch);
+  const unseat = useMutation(api.matches.unseat);
   const [reporting, setReporting] = useState<ResultMatch | null>(null);
 
   if (game === undefined) return <Spinner label="Loading the bracket…" />;
@@ -139,6 +143,35 @@ export default function GameBracketPage() {
       stationName: stationNameFor(m),
     });
 
+  // Host-only: fix a completed match (change winner / undo) or unseat a live one.
+  // Reuses the existing reopenMatch + unseat mutations and the ResultSheet.
+  const manage: MatchManage | undefined =
+    identity.isHost && identity.deviceId
+      ? {
+          isHost: true,
+          onChangeResult: (m) => {
+            void run(
+              () => reopenMatch({ deviceId: identity.deviceId!, matchId: m._id }),
+              "Reopened — now pick the corrected result.",
+            ).then((ok) => {
+              if (ok) openReport(m);
+            });
+          },
+          onUndo: (m) => {
+            void run(
+              () => reopenMatch({ deviceId: identity.deviceId!, matchId: m._id }),
+              "Result undone — the match is open again.",
+            );
+          },
+          onUnseat: (m) => {
+            void run(
+              () => unseat({ deviceId: identity.deviceId!, matchId: m._id }),
+              "Sent back to the queue.",
+            );
+          },
+        }
+      : undefined;
+
   return (
     <div className="space-y-5">
       <BackLink />
@@ -161,6 +194,7 @@ export default function GameBracketPage() {
             stationNameFor={stationNameFor}
             canReport={canReport}
             onReport={openReport}
+            manage={manage}
           />
           <GameMedia gameId={game._id} />
         </>
@@ -340,12 +374,14 @@ function BracketSection({
   stationNameFor,
   canReport,
   onReport,
+  manage,
 }: {
   game: GameDoc;
   matches: BracketMatch[] | undefined;
   stationNameFor: (m: BracketMatch) => string | undefined;
   canReport: (m: BracketMatch) => boolean;
   onReport: (m: BracketMatch) => void;
+  manage?: MatchManage;
 }) {
   if (matches === undefined) return <Spinner label="Loading matches…" />;
 
@@ -390,6 +426,7 @@ function BracketSection({
             stationNameFor={stationNameFor}
             canReport={canReport}
             onReport={onReport}
+            manage={manage}
           />
           <p className="mt-3 flex items-center justify-center gap-1 text-center text-[11px] text-white/30 sm:hidden">
             <Icon name="arrowLeft" size={12} /> swipe to see later rounds{" "}
@@ -402,6 +439,7 @@ function BracketSection({
           stationNameFor={stationNameFor}
           canReport={canReport}
           onReport={onReport}
+          manage={manage}
         />
       )}
     </section>
