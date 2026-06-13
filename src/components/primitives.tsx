@@ -109,7 +109,7 @@ export function TeamBadge({
     size === "lg" ? "text-lg" : size === "sm" ? "text-sm" : "text-base";
   const mascotSize = size === "lg" ? 18 : size === "sm" ? 14 : 16;
   return (
-    <span className={cx("inline-flex items-center gap-1.5 font-semibold", text, className)}>
+    <span className={cx("inline-flex min-w-0 max-w-full items-center gap-1.5 font-semibold", text, className)}>
       <span
         className="inline-block h-2.5 w-2.5 shrink-0 rounded-full"
         style={{ background: hex, boxShadow: `0 0 10px ${hex}99` }}
@@ -117,7 +117,7 @@ export function TeamBadge({
       <span style={{ color: hex }} className="shrink-0">
         <Mascot name={emoji} size={mascotSize} />
       </span>
-      <span className="truncate">{name}</span>
+      <span className="min-w-0 truncate">{name}</span>
     </span>
   );
 }

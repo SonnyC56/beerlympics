@@ -62,16 +62,20 @@ export function VersusRow({
   if (teams.length === 2) {
     return (
       <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1">
+        <div className="flex min-w-0 flex-1">
           <TeamBadge emoji={teams[0].emoji} name={teams[0].name} color={teams[0].color} size={size} />
         </div>
         <span className="shrink-0 animate-pulse font-display text-xs text-[var(--color-flame)]">
           VS
         </span>
-        <div className="min-w-0 flex-1 text-right">
-          <span className="inline-flex flex-row-reverse">
-            <TeamBadge emoji={teams[1].emoji} name={teams[1].name} color={teams[1].color} size={size} />
-          </span>
+        <div className="flex min-w-0 flex-1 justify-end">
+          <TeamBadge
+            emoji={teams[1].emoji}
+            name={teams[1].name}
+            color={teams[1].color}
+            size={size}
+            className="flex-row-reverse"
+          />
         </div>
       </div>
     );
