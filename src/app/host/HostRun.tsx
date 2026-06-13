@@ -455,6 +455,7 @@ function GenerateBrackets({
   const generate = useMutation(api.tournament.generate);
   const seedFinale = useMutation(api.tournament.seedFromStandings);
   const resetGame = useMutation(api.tournament.resetGame);
+  const reshuffle = useMutation(api.tournament.reshuffleUpcoming);
 
   const [seeding, setSeeding] = useState<Record<string, Seeding>>({});
   const [topN, setTopN] = useState<Record<string, number>>({});
@@ -467,6 +468,28 @@ function GenerateBrackets({
         a phase — by seed in the Group Circuit, by live standings in the knockouts. Use these
         only to re-seed or rebuild a single game. Beer Die still seeds from the Seed&nbsp;finale
         button below.
+      </p>
+      <button
+        className="btn btn-ghost mb-4 w-full py-2.5 text-sm"
+        disabled={!identity.deviceId}
+        onClick={() =>
+          run(async () => {
+            const res = await reshuffle({ deviceId: identity.deviceId! });
+            const n = (res as { reshuffled?: string[] })?.reshuffled?.length ?? 0;
+            if (!n)
+              throw new Error(
+                "No upcoming brackets to shuffle — the rest are already underway.",
+              );
+          }, "Upcoming matchups shuffled!")
+        }
+      >
+        <span className="flex items-center justify-center gap-1.5">
+          <Icon name="dice" size={15} /> Shuffle upcoming matchups
+        </span>
+      </button>
+      <p className="mb-3 text-xs text-white/40">
+        Re-draws every not-yet-started game so teams stop facing the same opponent.
+        Games already in progress are left alone.
       </p>
       {games === undefined ? (
         <Spinner />
