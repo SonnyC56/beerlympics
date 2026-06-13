@@ -583,6 +583,106 @@ export const reshuffleUnstarted = internalMutation({
 });
 
 /**
+ * Admin-only (CLI/dashboard): COLLAPSE the schedule — skip straight from the
+ * Group Circuit to a Beer Die championship among the current top N. Freezes the
+ * leaderboard (keeps all completed results + points), drops every unfinished
+ * match, jumps the event to the Finals phase, opens only the Beer Die station,
+ * and seeds Beer Die single-elim from the live standings. Destructive (drops
+ * in-progress circuit games); deliberate end-of-night wrap-up.
+ */
+export const collapseToBeerDieFinals = internalMutation({
+  args: { topN: v.optional(v.number()) },
+  handler: async (ctx, { topN }) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const phases = await ctx.db
+      .query("phases")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    const finals = phases.find((p) => p.kind === "final");
+    if (!finals) throw new Error("No finals phase found.");
+    const games = await ctx.db
+      .query("games")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    const beerDie = games.find((g) => g.name.toLowerCase() === "beer die");
+    if (!beerDie) throw new Error("Beer Die game not found.");
+
+    // 1) Drop every unfinished match (keep completed ones — they hold the
+    //    standings). Their score entries only exist on completion, so nothing
+    //    earned is lost.
+    let droppedMatches = 0;
+    for (const g of games) {
+      const ms = await ctx.db
+        .query("matches")
+        .withIndex("by_game", (q) => q.eq("gameId", g._id))
+        .collect();
+      for (const m of ms) {
+        if (m.status !== "completed") {
+          await ctx.db.delete(m._id);
+          droppedMatches++;
+        }
+      }
+      // Mark a still-"active" non-finale game as completed for display.
+      if (g._id !== beerDie._id && g.status === "active") {
+        await ctx.db.patch(g._id, { status: "completed" });
+      }
+    }
+
+    // 2) Jump the event to the Finals phase.
+    await ctx.db.patch(event._id, {
+      currentPhaseIndex: finals.index,
+      status: "live",
+    });
+    const evt = (await ctx.db.get(event._id))!;
+    for (const p of phases) {
+      const status =
+        p.index < finals.index
+          ? "complete"
+          : p.index === finals.index
+            ? "active"
+            : "locked";
+      await ctx.db.patch(p._id, {
+        status,
+        ...(p.index === finals.index && !p.startedAt
+          ? { startedAt: Date.now() }
+          : {}),
+      });
+    }
+
+    // 3) Open only the Beer Die station(s); close the rest.
+    const stations = await ctx.db
+      .query("stations")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    for (const s of stations) {
+      await ctx.db.patch(s._id, {
+        status: s.gameId === beerDie._id ? "open" : "closed",
+        currentMatchId: undefined,
+      });
+    }
+
+    // 4) Seed Beer Die from the live standings (top N).
+    const ordered = await orderTeams(ctx, evt, "standings");
+    const top = ordered.slice(0, topN ?? 4);
+    if (top.length < 2) throw new Error("Not enough teams to seed the finale.");
+    await clearInstance(ctx, evt, beerDie._id, finals.index);
+    await buildSingleElim(ctx, evt, beerDie, finals.index, top);
+    await ctx.db.patch(beerDie._id, { status: "active" });
+
+    const finalists = await Promise.all(
+      top.map(async (id) => (await ctx.db.get(id))?.name ?? "?"),
+    );
+    await recordActivity(ctx, evt._id, {
+      kind: "phase",
+      message: `Straight to the FINALS — the top ${top.length} battle it out at Beer Die!`,
+    });
+    const started = await runDispatch(ctx, evt);
+    return { finalists, droppedMatches, started };
+  },
+});
+
+/**
  * Admin-only (CLI/dashboard): FORCE-reshuffle every bracketed, non-gated game in
  * the current phase EXCEPT the named ones — even games already underway. This
  * wipes those games' existing matches AND their points for this phase and draws
