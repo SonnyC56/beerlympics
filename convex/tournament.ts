@@ -583,6 +583,173 @@ export const reshuffleUnstarted = internalMutation({
 });
 
 /**
+ * Admin-only (CLI/dashboard): remove the intermediate phases (Knockouts +
+ * Semifinals) so the event runs Group Circuit -> Finals with nothing in between.
+ * Deletes ONLY those two phase records (they have no matches/points — the event
+ * skipped them). The Finals phase keeps its index, so the Beer Die finals bracket
+ * and every score stay exactly as they are.
+ */
+export const removeIntermediatePhases = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const phases = await ctx.db
+      .query("phases")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    const removed: string[] = [];
+    for (const p of phases) {
+      if (p.kind === "knockout" || p.kind === "semifinal") {
+        // Safety: only delete a phase that has no matches (these never ran).
+        const matches = await ctx.db
+          .query("matches")
+          .withIndex("by_event", (q) => q.eq("eventId", event._id))
+          .collect();
+        const hasMatches = matches.some((m) => m.phaseIndex === p.index);
+        if (hasMatches) continue;
+        await ctx.db.delete(p._id);
+        removed.push(p.name);
+      }
+    }
+    const remaining = phases
+      .filter((p) => p.kind !== "knockout" && p.kind !== "semifinal")
+      .sort((a, b) => a.index - b.index)
+      .map((p) => `${p.name} [${p.kind}]`);
+    return { removed, remaining };
+  },
+});
+
+/**
+ * Admin-only (CLI/dashboard): undo a premature finals collapse — put the event
+ * back on the Group Circuit. Removes the finals (Beer Die) bracket, returns the
+ * event to the qualifier phase, reopens one station per non-gated game, and
+ * rebuilds any UNFINISHED circuit game so the round can be played to the end.
+ * KEEPS every score entry (standings unchanged). Finished games are left intact.
+ * The exact deleted in-progress matches can't be recovered, so unfinished games
+ * get a fresh draw — points are preserved either way.
+ */
+export const restoreGroupCircuit = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const phases = await ctx.db
+      .query("phases")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    const finals = phases.find((p) => p.kind === "final");
+    const circuit =
+      phases.find((p) => p.kind === "qualifier") ??
+      phases.find((p) => p.index === 0);
+    if (!circuit) throw new Error("No qualifier/circuit phase found.");
+    const games = await ctx.db
+      .query("games")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    const beerDie = games.find((g) => g.name.toLowerCase() === "beer die");
+
+    // 1) Remove the finals bracket (matches in the finals phase).
+    if (finals) {
+      for (const g of games) {
+        const fm = (
+          await ctx.db
+            .query("matches")
+            .withIndex("by_game", (q) => q.eq("gameId", g._id))
+            .collect()
+        ).filter((m) => m.phaseIndex === finals.index);
+        for (const m of fm) await ctx.db.delete(m._id);
+      }
+    }
+
+    // 2) Event back to the Group Circuit phase.
+    await ctx.db.patch(event._id, {
+      currentPhaseIndex: circuit.index,
+      status: "live",
+    });
+    const evt = (await ctx.db.get(event._id))!;
+    for (const p of phases) {
+      await ctx.db.patch(p._id, {
+        status: p.index === circuit.index ? "active" : "locked",
+      });
+    }
+
+    // 3) Rebuild any unfinished circuit game (points kept). Finished games stay.
+    const rebuilt: string[] = [];
+    const keptIntact: string[] = [];
+    for (const g of games) {
+      if (g.enabled === false) continue;
+      if (g.format === "wheel" || g.format === "special") continue;
+      if (g.isGated) continue; // Beer Die stays out of the circuit
+      const ms = (
+        await ctx.db
+          .query("matches")
+          .withIndex("by_game", (q) => q.eq("gameId", g._id))
+          .collect()
+      ).filter((m) => m.phaseIndex === circuit.index);
+      const maxR = ms.reduce((r, m) => Math.max(r, m.round), 0);
+      const finished =
+        ms.length > 0 &&
+        ms.some(
+          (m) => m.round === maxR && !m.nextMatchId && m.status === "completed",
+        );
+      if (finished) {
+        keptIntact.push(g.name);
+        continue;
+      }
+      // Delete this game's circuit matches WITHOUT touching score entries.
+      for (const m of ms) await ctx.db.delete(m._id);
+      const ordered = await orderTeams(ctx, evt, "random");
+      if (ordered.length < 2) continue;
+      if (g.format === "heats") {
+        await buildHeats(ctx, evt, g, circuit.index, ordered);
+      } else if (g.format === "round_robin" || g.format === "ladder") {
+        await buildRoundRobin(ctx, evt, g, circuit.index, ordered);
+      } else {
+        await buildSingleElim(ctx, evt, g, circuit.index, ordered);
+      }
+      await ctx.db.patch(g._id, { status: "active" });
+      rebuilt.push(g.name);
+    }
+
+    // 4) Reopen one station per non-gated game; close the rest + the gated table.
+    const stations = await ctx.db
+      .query("stations")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    const byGame = new Map<string, typeof stations>();
+    for (const s of stations) {
+      const arr = byGame.get(s.gameId as string) ?? [];
+      arr.push(s);
+      byGame.set(s.gameId as string, arr);
+    }
+    for (const [gid, arr] of byGame) {
+      const game = games.find((g) => (g._id as string) === gid);
+      const gated =
+        !game ||
+        game.isGated ||
+        game.format === "wheel" ||
+        game.format === "special";
+      arr.sort((a, b) => a.sortOrder - b.sortOrder);
+      for (let i = 0; i < arr.length; i++) {
+        await ctx.db.patch(arr[i]._id, {
+          status: !gated && i === 0 ? "open" : "closed",
+          currentMatchId: undefined,
+        });
+      }
+    }
+    if (beerDie) await ctx.db.patch(beerDie._id, { status: "scheduled" });
+
+    await recordActivity(ctx, evt._id, {
+      kind: "phase",
+      message: "Back to the Group Circuit — finish your matches!",
+    });
+    const started = await runDispatch(ctx, evt);
+    return { rebuilt, keptIntact, started };
+  },
+});
+
+/**
  * Admin-only (CLI/dashboard): COLLAPSE the schedule — skip straight from the
  * Group Circuit to a Beer Die championship among the current top N. Freezes the
  * leaderboard (keeps all completed results + points), drops every unfinished
