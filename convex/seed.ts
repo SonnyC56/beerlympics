@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { internalMutation, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { genCode, getActiveEvent } from "./lib";
 import { GAME_CATALOG, DEFAULT_WHEEL_SPOTS } from "./gameCatalog";
@@ -12,9 +12,10 @@ const DEFAULT_SETTINGS = {
   maxTeamSize: 3, // pair + optional sub
 };
 
-// Games removed from the lineup — `seed:resync` deletes these (and their
-// stations / matches / score rows) if they still exist.
-const RETIRED_GAMES = ["Slap Cup", "Quarters", "Snappa"];
+// Games removed from the lineup — `seed:resync` (and `purgeRetired`) delete these
+// (and their stations / matches / score rows) if they still exist, and they're
+// no longer in GAME_CATALOG so they never re-seed.
+const RETIRED_GAMES = ["Slap Cup", "Quarters", "Snappa", "Boat Race", "Cornhole"];
 
 const PHASES = [
   {
@@ -312,6 +313,61 @@ export const resync = mutation({
       wheelsMigrated,
       message: `Resynced ${updated} games, added ${added} new (+${stationsAdded} stations), removed ${removed}, migrated ${wheelsMigrated} wheel(s).`,
     };
+  },
+});
+
+/**
+ * Admin-only (CLI/dashboard): immediately purge any RETIRED_GAMES from the live
+ * event — deletes the game and cascades its stations, matches, and score entries
+ * — without running a full resync. Idempotent (no-op once they're gone). Pairs
+ * with removing the game from GAME_CATALOG so it never re-seeds.
+ */
+export const purgeRetired = internalMutation({
+  args: {},
+  handler: async (ctx) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const retired = new Set(RETIRED_GAMES.map((n) => n.trim().toLowerCase()));
+    const games = await ctx.db
+      .query("games")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+    const removed: string[] = [];
+    let stationsDeleted = 0;
+    let matchesDeleted = 0;
+    let scoreEntriesDeleted = 0;
+    for (const g of games) {
+      if (!retired.has(g.name.trim().toLowerCase())) continue;
+      const stations = await ctx.db
+        .query("stations")
+        .withIndex("by_game", (q) => q.eq("gameId", g._id))
+        .collect();
+      for (const s of stations) {
+        await ctx.db.delete(s._id);
+        stationsDeleted++;
+      }
+      const matches = await ctx.db
+        .query("matches")
+        .withIndex("by_game", (q) => q.eq("gameId", g._id))
+        .collect();
+      for (const m of matches) {
+        await ctx.db.delete(m._id);
+        matchesDeleted++;
+      }
+      const scores = await ctx.db
+        .query("scoreEntries")
+        .withIndex("by_event_and_game", (q) =>
+          q.eq("eventId", event._id).eq("gameId", g._id),
+        )
+        .collect();
+      for (const e of scores) {
+        await ctx.db.delete(e._id);
+        scoreEntriesDeleted++;
+      }
+      await ctx.db.delete(g._id);
+      removed.push(g.name);
+    }
+    return { removed, stationsDeleted, matchesDeleted, scoreEntriesDeleted };
   },
 });
 

@@ -120,25 +120,6 @@ export const GAME_CATALOG: CatalogGame[] = [
       "Play to a set score (e.g. 7, win by 2). The longest game of the day — that's why it's reserved for the Semifinals & Final.",
     ],
   },
-  {
-    key: "boatrace",
-    name: "Boat Race",
-    emoji: "🚣",
-    category: "drinking",
-    format: "single_elim",
-    teamsPerMatch: 2,
-    pointsMultiplier: 1.0,
-    estMinutes: 6,
-    art: "boatrace",
-    stations: 1,
-    blurb: "A pure chug relay. Fastest crew wins, simple as that.",
-    rules: [
-      "Two teams line up. On 'go', the first players chug a full beer.",
-      "Finish, then flip the empty cup/can over your head to prove it's done.",
-      "Once yours is flipped, the next teammate starts.",
-      "First team with every member finished wins the race.",
-    ],
-  },
 
   // ── DRINKING GAMES — circle & chaos ─────────────────────────────────────────
   {
@@ -203,25 +184,6 @@ export const GAME_CATALOG: CatalogGame[] = [
   },
 
   // ── LAWN GAMES (outdoor / big) ──────────────────────────────────────────────
-  {
-    key: "cornhole",
-    name: "Cornhole",
-    emoji: "🌽",
-    category: "lawn",
-    format: "single_elim",
-    teamsPerMatch: 2,
-    pointsMultiplier: 1.3,
-    estMinutes: 18,
-    art: "cornhole",
-    stations: 2,
-    blurb: "Toss bean bags at the board. On the board scores 1, in the hole scores 3.",
-    rules: [
-      "Two boards about 27 feet apart. Teams alternate tossing 4 bean bags each.",
-      "Bag on the board = 1 point. Bag through the hole = 3 points.",
-      "Cancellation scoring: each round, only the higher-scoring team scores the difference.",
-      "First team to exactly 21 wins (go over and some house rules bust you back).",
-    ],
-  },
   {
     key: "spikeball",
     name: "Spikeball",
