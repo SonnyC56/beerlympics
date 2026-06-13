@@ -581,3 +581,49 @@ export const reshuffleUnstarted = internalMutation({
     return reshuffleUnstartedFor(ctx, event);
   },
 });
+
+/**
+ * Admin-only (CLI/dashboard): FORCE-reshuffle every bracketed, non-gated game in
+ * the current phase EXCEPT the named ones — even games already underway. This
+ * wipes those games' existing matches AND their points for this phase and draws
+ * fresh random brackets. Destructive; use deliberately.
+ */
+export const reshuffleGamesExcept = internalMutation({
+  args: { exclude: v.array(v.string()) },
+  handler: async (ctx, { exclude }) => {
+    const event = await getActiveEvent(ctx);
+    if (!event) throw new Error("No event.");
+    const ex = new Set(exclude.map((n) => n.trim().toLowerCase()));
+    const phaseIndex = Math.max(0, event.currentPhaseIndex);
+    const games = await ctx.db
+      .query("games")
+      .withIndex("by_event", (q) => q.eq("eventId", event._id))
+      .collect();
+
+    const reshuffled: string[] = [];
+    const kept: string[] = [];
+    for (const g of games) {
+      if (g.enabled === false) continue;
+      if (g.format === "wheel" || g.format === "special") continue;
+      if (g.isGated) {
+        kept.push(`${g.name} (gated)`);
+        continue;
+      }
+      if (ex.has(g.name.trim().toLowerCase())) {
+        kept.push(g.name);
+        continue;
+      }
+      const ordered = await orderTeams(ctx, event, "random");
+      if (ordered.length < 2) continue;
+      await buildInstance(ctx, event, g, phaseIndex, ordered); // wipes + rebuilds
+      reshuffled.push(g.name);
+    }
+
+    await recordActivity(ctx, event._id, {
+      kind: "announcement",
+      message: "Brackets re-drawn — fresh matchups all around!",
+    });
+    const seated = await runDispatch(ctx, event);
+    return { reshuffled, kept, seated };
+  },
+});
